@@ -1,0 +1,35 @@
+\chapter{Conclusiones}
+\label{chap:conclusiones}
+
+\lettrine{E}{n} este último capítulo se hace un balance general de este \acrlong{tfg}, a partir del cual se extraen conclusiones, así como su relación con la titulación y posibles líneas de trabajo futuro, algunas de las cuales ya se han mencionado previamente a lo largo de todo el documento.
+
+\section{Conclusiones}
+El objetivo del \acrshort{tfg} es la creación de un mini-supercomputador con \acrlong{rpi}s, que sirva como base tangible para realizar explicaciones a personas con poca o ninguna formación en este sector del \acrshort{hpc}. Personalmente, y dejando siempre espacio para la discrepancia de los profesores que lo evalúen, pienso que este objetivo se ha cumplido con creces, puesto que el resultado ha sido un supercomputador en miniatura, con todas sus secciones bien diferenciadas, y extrapolables a un supercomputador real. 
+
+Por otro lado, en el apartado software se ha puesto mucho énfasis en la simplicidad tanto de implementación como de mantenimiento, intentando realizar las configuraciones necesarias siempre con la mínima cantidad de dependencias y condicionantes posibles. Además, el dashboard, si bien no es una pieza de código particularmente compleja, tiene invertidas una gran cantidad de horas en diseño, especialmente de cara a la docencia y divulgación. A primera vista éstas pueden no parecer evidentes, pero se notan cuando uno se fija más en detalle y emplea adecuadamente los recursos que éste ofrece.
+
+En cuanto a los vídeos, personalmente pienso que cumplen su objetivo con creces, superando hasta mis propias expectativas. Dejando de lado el apartado artístico, sus principales objetivos son enseñar por un lado, así como motivar y despertar la curiosidad de sus visores por otro, y confío en que estos objetivos han sido más que cumplidos, a pesar de que esto no se podrá saber hasta que el público objetivo emita su veredicto.
+
+En cuanto a rendimiento y escalabilidad, se puede concluir con total seguridad que, quizás, para \acrshort{hpc}, la plataforma de la frambuesa no es la más adecuada. Esto no debería coger a nadie por sorpresa, ya que no existen componentes redundantes en todo el clúster (ni posibilidad de añadirlos), hay una falta importante de aceleración por hardware y, en general, ninguna \acrlong{rpi} está diseñada para ser un ordenador especialmente eficaz en este sentido (véase especialmente el impacto del ancho de banda a la memoria principal en la Sección \ref{ssec:resultados}). Sin embargo, esto no quita que la plataforma no sirva para ejecutar programas paralelos sobre ella y comprobar cómo son capaces de cooperar los diferentes componentes hardware del sistema para acelerar la ejecución de aplicaciones científicas y de ingeniería, que era al fin y al cabo el objetivo final del proyecto.
+
+Personalmente, este \acrshort{tfg} me ha permitido llevar a cabo algo que siempre despertó mi curiosidad, montar una plataforma paralela desde cero, pero que por cuestiones económicas nunca fue una opción realizable. Por otro lado, al ser un proyecto que abarca varias áreas de la informática, me ha permitido poner en práctica diversas capacidades aprendidas durante la carrera, las cuales me han permitido no solo saber qué hacer en qué momento, sino tener la capacidad de poder visualizar posibles líneas de evolución para posibles nuevas iteraciones de este proyecto, y diseñar con vistas a ello. Además, la experiencia de múltiples años como profesor particular, y mi interés personal en encontar siempre formas lo más amenas e innovadoras de enseñar, allanaron enormemente el camino en lo que a recursos didácticos se refiere, pero también fueron un obstáculo, al tener el listón situado a una altura exigente.
+
+\section{Relación con la titulación}
+Durante el desarrollo de Clúpiter se pusieron en práctica ciertas habilidades y conocimientos aprendidos tanto en la carrera como a raíz de la misma. En concreto estas habilidades van en relación con las asignaturas relacionadas con administración de infraestructuras (\acrshort{aii} y \acrshort{eii}), administración y gestión de sistemas operativos (\acrshort{ib}, \acrshort{so}, \acrshort{aso}, \acrshort{aii}), gestión de redes (\acrshort{ib}, redes, \acrshort{ar}), gestión de proyectos, especialmente procesos software (\acrshort{xp} y \acrshort{ps}), así como programación paralela con \acrshort{mpi} (\acrshort{cp} y \acrshort{ac}). Además, me gustaría hacer mención especial a asignaturas como \acrshort{fc}, \acrshort{ec}, \acrshort{ac}, \acrshort{te}, \acrshort{dhi}, \acrshort{cp}, \acrshort{se} y \acrshort{chs} por ser una inspiración a lo largo de la carrera, y que en parte han hecho que me decante por este proyecto\footnote{Puede encontrarse la relación de estas asignaturas con su nombre completo en la lista de acrónimos}.
+
+Por otro lado, también es positiva la dinámica que imbuye la carrera en los estudiantes de la misma, que, si bien en mi caso ya era autodidacta desde bien pequeño, anima y obliga a ``salir de la zona de confort'' a los estudiantes, resultando eso de gran ayuda al afrontar proyectos en los que se desconoce a priori qué tecnologías usar, por lo que, no solo hay que aprender a usar las mismas, sino también hacer las elecciones adecuadas.
+
+\section{Trabajo futuro}
+Como se viene comentando a lo largo de todo el documento, hay múltiples líneas de trabajo con las que continuar. Estas posibles ``iteraciones'' adicionales deberían seguir en sí mismas un ciclo de vida incremental, dando así un ciclo de vida iterativo al propio Clúpiter, siendo esta la versión 1.0, por ejemplo.
+
+En un ánimo de proponer mejoras o modificaciones que realizar en hipotéticas iteraciones futuras, se pueden encontrar:
+\begin{itemize}
+    \item Mejora del rendimiento de la CPU mediante \gls{overclock}.
+    \item Mejora del ancho de banda de la memoria principal, tambien mediante \gls{overclock}.
+    \item Mejora de la seguridad del sistema.
+    \item Mejora y automatización de la mantenibilidad del sistema.
+    \item Mejora del chasis, especialmente mediante el uso de una plegadora en el cortado de las planchas.
+    \item Mejora del dashboard, preferiblemente extendiendo su funcionalidad y no modificándola.
+\end{itemize}
+
+Finalmente, una iteración que personalmente me haría ilusión que alguien realizase, consistiría en acelerar el rendimiento de algún programa computacionalmente exigente mediante la GPU/VPU VideoCore VI (\ref{ssec:gpu_vpu}). Esto, que requiere una investigación más en profundidad por parte de un hipotético interesado, quizás podría realizarse mediante Vulkan Compute Shaders, OpenCL si este estuviese disponible en ese momento, o empleando alguna librería como py-videocore6\footnote{\url{https://github.com/Idein/py-videocore6}}, pareciéndome la primera la opción más interesante.

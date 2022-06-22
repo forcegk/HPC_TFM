@@ -1,0 +1,1 @@
+inkscape -D -z --file=raspi_diagram.svg --export-pdf=raspi_diagram.pdf --export-latex

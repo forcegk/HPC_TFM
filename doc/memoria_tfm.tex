@@ -1,0 +1,179 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Preámbulo                                                                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt,a4paper,titlepage,twoside,openright,openbib,spanish]{report}
+
+%%% RELACIÓN DE VARIABLES A PERSONALIZAR %%%
+\def\lingua{esp} % descomenta esta liña se redactarás a memoria en español
+\def\nome{Alonso Rodríguez Iglesias}                             % substitúe aquí o teu nome
+\def\nomedirectorA{Gabriel Rodríguez Álvarez}             % substitúe aquí o nome de quen dirixe
+\def\nomedirectorB{Juan Touriño Domínguez}             % substitúe aquí o nome de quen dirixe
+\def\titulo{Análisis del rendimiento de la inferencia de redes de aprendizaje profundo en arquitecturas de altas prestaciones} % substitúe aquí o título do teu TFM
+\def\mencion{ENXEÑARÍA DE COMPUTADORES}
+
+\def\renomearcadros{si} % descomenta esta liña se redactas a memoria en español e prefires que
+                         % os "cuadros" e o "índice de cuadros" se renomeen
+                         % a "tablas" e "índice de tablas" respectivamente
+
+\usepackage{estilo_tfm}
+
+% Lista de paquetes potencialmente interesantes (uso baixo demanda)
+
+\usepackage[all]{nowidow}
+% \usepackage{alltt}       % proporciona o entorno alltt, semellante a verbatim pero que respecta comandos
+% \usepackage{enumitem}    % permite personalizar os entornos de lista
+% \usepackage{eurofont}    % proporciona o comando \euro
+\usepackage{eurosym}
+\usepackage{float}       % permite máis opcións para controlar obxectos flotantes (táboas, figuras)
+\usepackage{hhline}      % permie personalizar as liñas horizontais en arrays e táboas
+% \usepackage{longtable}   % permite construir táboas que ocupan máis dunha páxina
+\usepackage{lscape}      % permite colocar partes do documento en orientación apaisada
+% \usepackage{moreverb}    % permite personalizar o entorno verbatim
+\usepackage{multirow}    % permite crear celdas que ocupan varias filas da mesma táboa
+\usepackage{pdfpages}    % permite insertar ficheiros en PDF no documento
+\usepackage{rotating}    % permite diferentes tipos de rotacións para figuras e táboas
+% \usepackage{subcaption}  % permite a inclusión de varias subfiguras nunha figura
+% \usepackage{tabu}        % permite táboas flexibles
+% \usepackage{tabularx}    % permite táboas con columnas de anchura determinada
+\usepackage{pdflscape}
+\usepackage{translator}
+\usepackage{placeins}
+\usepackage{tablefootnote}
+
+\usepackage[scale=MatchLowercase]{sourcecodepro}
+\usepackage{pgfplots}
+\usepackage{pgfgantt}
+\newganttlinktype{F-S}{
+  \ganttsetstartanchor{east}
+  \ganttsetendanchor{west}
+  \draw [/pgfgantt/link] (\xLeft - 0.2,\yUpper) -- (\xRight + 0.2, \yLower);
+}
+
+\newganttlinktype{F_S}{
+  \ganttsetstartanchor{east}
+  \ganttsetendanchor{west}
+  \draw [/pgfgantt/link] (\xLeft - 0.2,\yUpper) |- (\xRight + 0.2, \yLower);
+}
+
+\newganttlinktype{S-S}{
+  \ganttsetstartanchor{west}
+  \ganttsetendanchor{west}
+  \draw [/pgfgantt/link] (\xLeft + 0.2,\yUpper) |- (\xRight, \yLower);
+}
+
+\newganttlinktype{F-F}{
+  \ganttsetstartanchor{east}
+  \ganttsetendanchor{east}
+  \draw [/pgfgantt/link] (\xLeft - 0.2 ,\yUpper) -| (\xRight - 0.2, \yLower);
+}
+
+\newganttlinktype{F-S}{
+  \ganttsetstartanchor{east}
+  \ganttsetendanchor{west}
+  \draw [/pgfgantt/link] (\xLeft - 0.2,\yUpper) -| (\xRight + 0.2, \yLower);
+}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat = newest}
+\usepackage{wrapfig}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{wrapfigure}{\setlength{\intextsep}{0pt}}
+\usepackage{svg}
+\usepackage{adjustbox}
+\newcommand{\vasymptote}[2][]{
+    \draw [thick,ficblue,densely dashed,#1] ({rel axis cs:0,0} -| {axis cs:#2,0}) -- ({rel axis cs:0,1} -| {axis cs:#2,0});
+}
+\pgfplotsset{every axis/.append style={
+        scaled y ticks = false, 
+        scaled x ticks = false, 
+        y tick label style={/pgf/number format/.cd, fixed},
+        x tick label style={/pgf/number format/.cd, fixed}
+    }
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Corpo                                                                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Preliminares do documento            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\include{portada/portada}
+\paxinaenbranco
+\begin{flushright}
+\dedicatoria{A todas las personas que me apoyaron en los buenos y los malos momentos.\\Gracias a ellos hoy soy quien soy.}
+\end{flushright}
+\paxinaenbranco
+\paxinaenbranco
+\begin{agradecementos}
+A todas las personas que me han acompañado a lo largo de mi vida, en especial a mi familia y amigos, por estar ahí cuando se los necesitaba, por los buenos momentos que hemos pasado juntos, y su permanente e incondicional apoyo.
+
+A todas las increíbles personas que he conocido y con las que he tenido el placer de compartir prácticas y tiempo juntos. Ellos saben quienes son.
+
+A todos los profesores con los que he disfrutado aprendiendo, por muy difícil que fuese la materia, y que permiten que nuevas generaciones sigan explorando este apasionante mundo de la ingeniería informática. En especial a mis tutores Juan y María José, por depositar su confianza en mí, guiarme por el camino correcto, y por su inestimable trabajo y ayuda.
+
+Muchas gracias.
+
+\begin{flushright}
+Alonso
+\end{flushright}
+\end{agradecementos}
+% Ugly hack to fix random pagenumber %%%%%%
+\pagenumbering{gobble}
+\pagestyle{empty}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paxinaenbranco
+\include{portada/resumo}
+%\paxinaenbranco
+%Restore thinges %%%
+\pagestyle{fancy}
+%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{roman}
+\setcounter{page}{1}
+\bstctlcite{IEEEexample:BSTcontrol}
+
+\tableofcontents
+\listoffigures
+\listoftables
+\cleardoublepage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Capítulos                            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\include{contido/introducion}
+% \include{contido/clupiter}
+% \include{contido/analisis_diseño}
+% \include{contido/implementacion}
+% \include{contido/medida_rendimiento}
+% \include{contido/aplicacion_web}
+% \include{contido/planificacion_costes}
+\include{contido/conclusiones}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Apéndices, glosarios e bibliografía  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+\appendixpage
+% \include{anexos/factsheet_europe}
+% \include{anexos/bench_values}
+% \include{anexos/archlinux_maintenance_guide}
+
+\printglossary[type=\acronymtype,title=\nomeglosarioacronimos]
+\printglossary[title=\nomeglosariotermos]
+
+\bibliographystyle{IEEEtranN}
+\bibliography{\bibconfig,bibliografia/bibliografia}
+\cleardoublepage
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
