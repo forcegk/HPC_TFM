@@ -17,7 +17,33 @@ Las redes neuronales \textit{feed-forward} se componen de varias capas de neuron
 
 La capa que toma los datos de entrada se llama capa \textit{input} o de entrada, y la capa que expulsa los datos de salida es la capa \textit{output} o de salida. Las capas que realizan transformaciones intermedias se denominan capas ocultas, o \textit{hidden layers}.
 
-\textbf{TODO insertar imagen con explicación}
+En la Figura \ref{fig:dense_nn_sample} se puede ver un diagrama de una red neuronal Feed-Forward densa, en la que el valor del peso de la conexión se representa según el ancho de la conexión entre las neuronas. Esto es una red neuronal en la que cada neurona de una capa está conectada con todas las neuronas de la capa a continuación. Esto se traduce en que la matriz de pesos que representa cada capa es una matriz densa, o dicho de otra manera, que no contiene pesos con valor 0.
+
+\begin{figure}[h!]
+    \centering
+    \vspace*{0.5cm}
+    \def\svgwidth{0.85\textwidth}
+    \input{pdf_tex/dense_nn/dense_nn_sample.pdf_tex}
+    \caption{Red neuronal densa Feed-Forward}
+    \label{fig:dense_nn_sample}
+\end{figure}
+
+Por el contrario, y como se puede ver en la Figura REF, existen las redes neuronales dispersas, en las que una cantidad significativa de los pesos tienen valor cero. Estas redes se pueden obtener de múltiples formas, y sus objetivos son variados, a pesar de que el principal objetivo es reducir el tamaño del modelo.
+
+Una de las posibles maneras de obtener una red neuronal dispersa (\textit{sparse}) es mediante el podado o \textit{pruning}. Este método, sorprendentemente similar al empleado por neurocirujanos durante operaciones a cerebro abierto, consiste en ir cortando de forma más o menos arbitraria (en función del algoritmo) conexiones y observando cómo varía la salida. En caso de que la salida sea correcta, se continúa en esa dirección. Para que un cambio en una red neuronal se considere inapreciable, la salida debe verse alterada de tal forma que sea indistinguible su efecto del de unos diferentes parámetros iniciales durante el entrenamiento.
+
+De esta forma, una red neuronal dispersa puede contener alrededor de un 80\textasciitilde90\% menos de conexiones entre neuronas, representando esto un ahorro sustancial de energía en términos de acceso a memoria, relevante en sistemas miniaturizados donde cada miliwatt cuenta.
+
+\begin{figure}[h!]
+    \centering
+    \vspace*{0.5cm}
+    \def\svgwidth{0.85\textwidth}
+    \input{pdf_tex/sparse_nn/sparse_nn_sample.pdf_tex}
+    \caption{Red neuronal dispersa Feed-Forward}
+    \label{fig:sparse_nn_sample}
+\end{figure}
+
+Esta operación de podado puede no solamente limitarse a los pesos que interconectan neuronas, sino que se puede hacer el modelo más eficiente y reducido al podar todos los pesos entrantes en una neurona, eliminando por completo una neurona y sus conexiones posteriores en cadena. El efecto de eliminar una neurona sin conexiones entrantes, que únicamente arroja valores constantes en cada iteración, se puede compensar ajustando el \textit{bias} del receptor que correspondía a esa neurona en las conexiones posteriores.
 
 \subsection{Redes neuronales profundas}
 \label{ssec:redes_reuronales_profundas}
