@@ -3,14 +3,24 @@
 
 \lettrine{P}{ara} una correcta comprensión de los objetivos, tanto a corto como a largo plazo, de este trabajo, es necesario entender los conceptos básicos sobre los que se apoya esta línea de investigación.
 
-\section{Redes Neuronales}
+\section{Redes neuronales}
 \label{sec:redes_neuronales}
+Las redes neuronales constituyen la base de la mayoría de últimos avances en el campo de la inteligencia artificial, y a pesar de la enorme diversidad en \textit{layouts} de capas, neuronas, funciones de transferencia, etc, la realidad es que el álgebra lineal y la multiplicación de matrices son parte fundamental e imprescindible para la ejecución de las mismas. \cite[Figure 3.4]{deep_learning_for_computer_architects}
 
-La computación de altas prestaciones (\acrshort{hpc}, \acrlong{hpc}) y la inteligencia artificial (\acrshort{ia}) están de moda. Quizás más la segunda que la primera, pero lo cierto es que, sin base sobre la que ejecutarse, la segunda no tiene mucho que hacer.
-Los supercomputadores son equipos informáticos compuestos por miles de procesadores, así como cantidades ingentes de memoria para ofrecer una elevada capacidad y velocidad de cálculo y procesamiento de datos.
-Sin embargo, estas máquinas y sus mecanismos y procesos tan potentes suelen quedar muchas veces fuera de la comprensión no solo del público general, sino incluso de las personas que tienen la informática como \textit{hobby} o profesión.
+A pesar de que en la \acrshort{poc} (\acrlong{poc}) expuesta más adelante en este trabajo se trabaja únicamente con redes \textit{Feed-Forward}, sería naíf pensar que solamente existen estas arquitecturas de redes neuronales. Ejemplos a destacar serían las redes convolucionales, empleadas principalmente para el procesado de imágenes, las basadas en modelos secuenciales o en transformers, que están revolucionando el mundo de la inteligencia artificial mediante modelos de procesamiento del lenguaje o de generación de imágenes, así como muchas otras como las redes GAN, o las basadas en Encoder-Decoder.
 
-Para no quedarse atrás, la Unión Europea está realizando una muy importante inversión en las dos disciplinas anterioremente mencionadas, pero especialmente en \acrshort{hpc}, donde la inversión ya supera a la de la \acrshort{ia}, como se puede ver en una hoja publicada por la Unión Europea en \cite{eu_factsheet_digital}.
-Por esta razón, este \acrshort{tfg} tiene como objetivo atraer la atención de futuros ingenieros hacia este sector clave, que tanta inversión recibe y se espera que siga recibiendo. Para ello se construirá un pequeño clúster con Raspberry Pis con el nombre de Clúpiter, con el que poder realizar explicaciones acerca de cómo funciona este tan apasionante y demandado ámbito de la informática.
+Estas arquitecturas son llamadas de redes neuronales, a pesar de que como es evidente, una neurona no puede, como tal ``ejecutar'' una convolución. Más bien, estas nuevas arquitecturas se basan en la modelación de operaciones matemáticas complejas en pasos discretos como, por ejemplo, la convolución que se menciona previamente.
 
-El principal componente de Clúpiter, la Raspberry Pi, es un computador de formato muy reducido y bajo consumo y coste, usado muy habitualmente en proyectos amateur y entornos educativos, lo que posibilita su empleo en proyectos de divulgación como el que aquí se realiza.
+\subsection{Estructura de una red neuronal feed-forward}
+\label{ssec:estructura_red_neuronal_ff}
+Las redes neuronales \textit{feed-forward} se componen de varias capas de neuronas que toman una o más entradas, realizan la suma de todas ellas, suman un \textit{bias}, y finalmente aplican una función de transferencia no lineal.
+
+La capa que toma los datos de entrada se llama capa \textit{input} o de entrada, y la capa que expulsa los datos de salida es la capa \textit{output} o de salida. Las capas que realizan transformaciones intermedias se denominan capas ocultas, o \textit{hidden layers}.
+
+\textbf{TODO insertar imagen con explicación}
+
+\subsection{Redes neuronales profundas}
+\label{ssec:redes_reuronales_profundas}
+Dentro de las infinitas posibilidades que nos ofrecen las ``neuronas'' tratadas anteriormente, existe la posibilidad de apilar capa sobre capa, obteniendo a cada capa extra comportamientos y patrones más complejos.
+
+Y es que, debido a la no-linealidad de las funciones de transferencia, no es posible reducir múltiples capas de comportamiento no lineal en una sola capa. En precisamente este comportamiento de los sistemas no lineales el que permite reproducir comportamientos exóticos al aumentar el número de capas (y por tanto la complejidad) del sistema.
