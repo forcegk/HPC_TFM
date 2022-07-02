@@ -17,20 +17,20 @@ Las redes neuronales \textit{feed-forward} se componen de varias capas de neuron
 
 La capa que toma los datos de entrada se llama capa \textit{input} o de entrada, y la capa que expulsa los datos de salida es la capa \textit{output} o de salida. Las capas que realizan transformaciones intermedias se denominan capas ocultas, o \textit{hidden layers}.
 
-En la Figura \ref{fig:dense_nn_sample} se puede ver un diagrama de una red neuronal Feed-Forward densa, en la que el valor del peso de la conexión se representa según el ancho de la conexión entre las neuronas. Esto es una red neuronal en la que cada neurona de una capa está conectada con todas las neuronas de la capa a continuación. Esto se traduce en que la matriz de pesos que representa cada capa es una matriz densa, o dicho de otra manera, que no contiene pesos con valor 0.
+En la Figura \ref{fig:dense_nn_sample}\footnote{Imagen generada con la herramienta NN-SVG, disponible en \url{https://alexlenail.me/NN-SVG}} se puede ver un diagrama de una red neuronal Feed-Forward densa. Esto es, una red neuronal en la que cada neurona de una capa está conectada con todas las neuronas de la capa a continuación. Esto se traduce en que la matriz de pesos que representa cada capa es una matriz densa, o dicho de otra manera, que no contiene pesos con valor 0.
 
 \begin{figure}[h!]
     \centering
     \vspace*{0.5cm}
     \def\svgwidth{0.85\textwidth}
-    \input{pdf_tex/dense_nn/dense_nn_sample.pdf_tex}
+    \input{pdf_tex/dense_nn/dense_nn_svgnn.pdf_tex}
     \caption{Red neuronal densa Feed-Forward}
     \label{fig:dense_nn_sample}
 \end{figure}
 
-Por el contrario, y como se puede ver en la Figura REF, existen las redes neuronales dispersas, en las que una cantidad significativa de los pesos tienen valor cero. Estas redes se pueden obtener de múltiples formas, y sus objetivos son variados, a pesar de que el principal objetivo es reducir el tamaño del modelo.
+Por el contrario, y como se puede ver en la Figura \ref{fig:sparse_nn_sample}, existen las redes neuronales dispersas, en las que una cantidad significativa de los pesos tienen valor cero. Estas redes se pueden obtener de múltiples formas, y sus objetivos son variados, a pesar de que el principal objetivo es reducir el tamaño del modelo.
 
-Una de las posibles maneras de obtener una red neuronal dispersa (\textit{sparse}) es mediante el podado o \textit{pruning}. Este método, sorprendentemente similar al empleado por neurocirujanos durante operaciones a cerebro abierto, consiste en ir cortando de forma más o menos arbitraria (en función del algoritmo) conexiones y observando cómo varía la salida. En caso de que la salida sea correcta, se continúa en esa dirección. Para que un cambio en una red neuronal se considere inapreciable, la salida debe verse alterada de tal forma que sea indistinguible su efecto del de unos diferentes parámetros iniciales durante el entrenamiento.
+Uno de las posibles métodos para la obtención de una red neuronal dispersa (\textit{sparse}) es mediante el podado o \textit{pruning}. Este método, sorprendentemente similar al empleado por neurocirujanos durante operaciones a cerebro abierto, consiste en ir cortando de forma más o menos arbitraria (en función del algoritmo) conexiones y observando cómo varía la salida. En caso de que la salida sea correcta, se continúa en esa dirección. Para que un cambio en una red neuronal se considere inapreciable, la salida debe verse alterada de tal forma que sea indistinguible su efecto del de unos diferentes parámetros iniciales durante el entrenamiento.
 
 De esta forma, una red neuronal dispersa puede contener alrededor de un 80\textasciitilde90\% menos de conexiones entre neuronas, representando esto un ahorro sustancial de energía en términos de acceso a memoria, relevante en sistemas miniaturizados donde cada miliwatt cuenta.
 
@@ -43,10 +43,25 @@ De esta forma, una red neuronal dispersa puede contener alrededor de un 80\texta
     \label{fig:sparse_nn_sample}
 \end{figure}
 
-Esta operación de podado puede no solamente limitarse a los pesos que interconectan neuronas, sino que se puede hacer el modelo más eficiente y reducido al podar todos los pesos entrantes en una neurona, eliminando por completo una neurona y sus conexiones posteriores en cadena. El efecto de eliminar una neurona sin conexiones entrantes, que únicamente arroja valores constantes en cada iteración, se puede compensar ajustando el \textit{bias} del receptor que correspondía a esa neurona en las conexiones posteriores.
+Esta operación de podado puede no solamente limitarse a los pesos que interconectan neuronas, sino que se puede hacer el modelo más eficiente y reducido al podar todos los pesos entrantes en una neurona, eliminando por completo dicha neurona, a la vez sus conexiones posteriores en cadena. El efecto de eliminar una neurona sin conexiones entrantes, que únicamente arroja valores constantes en cada iteración, se puede compensar ajustando el \textit{bias} del receptor que correspondía a esa neurona en las conexiones posteriores.
 
 \subsection{Redes neuronales profundas}
 \label{ssec:redes_reuronales_profundas}
-Dentro de las infinitas posibilidades que nos ofrecen las ``neuronas'' tratadas anteriormente, existe la posibilidad de apilar capa sobre capa, obteniendo a cada capa extra comportamientos y patrones más complejos.
+El \textit{boom} de la inteligencia artificial en los últimos años viene dado en gran medida por el enorme crecimiento que ha experimentado el sector mediante técnicas de \textit{deep learning}, precisamente en estas redes neuronales profundas o \textit{deep neural networks}.
 
-Y es que, debido a la no-linealidad de las funciones de transferencia, no es posible reducir múltiples capas de comportamiento no lineal en una sola capa. En precisamente este comportamiento de los sistemas no lineales el que permite reproducir comportamientos exóticos al aumentar el número de capas (y por tanto la complejidad) del sistema.
+Y es que dentro de las infinitas posibilidades que nos ofrecen las ``neuronas'' tratadas anteriormente, existe la posibilidad de apilar capa sobre capa, obteniendo a cada capa extra comportamientos y patrones más complejos.
+Es precisamente este comportamiento de los sistemas no lineales el que permite reproducir comportamientos exóticos al aumentar el número de neuronas y/o capas (y por tanto la complejidad) del sistema.
+
+Tras sospechas previas de algunos investigadores como George Cybenko acerca de que una red neuronal con al menos una capa oculta es un aproximador universal, y tras demostrar dicho comportamiento para la sigmoide como función de transferencia \cite{cybenko1989approximation}, Kurt Hornik demostró en 1991 que una red neuronal de con al menos una capa oculta es siempre un aproximador universal, independientemente de la función de transferencia, siempre que esta sea no polinomial. A pesar de que una red neuronal de una sola capa oculta pueda ser un aproximador universal, se obtienen aproximaciones mucho más inteligentes y ``económicas'' computacionalmente al contar con más de una capa oculta \cite{hornik1991approximation}.
+
+
+
+\section{Redes neuronales densas}
+\label{sec:redes_reuronales_densas}
+Como se comenta en la sección anterior, dndependientemente del número de capas de la red, sea profunda o ``convencional'', una red neuronal densa es aquella en la que para $m$ neuronas en la capa $M$, y $n$ neuronas en la capa $N$, donde la neurona $x$ de la capa $M$ se denota $M_{x}$ existe siempre una conexión de $M_{m}$ a $N_{n}$ ($m\longrightarrow n$) (\ref{eq:dense_nn}):
+
+\begin{equation}
+\forall m \in M \:\wedge\: \forall n \in N, \: m\longrightarrow n
+\label{eq:dense_nn}
+\end{equation}
+
