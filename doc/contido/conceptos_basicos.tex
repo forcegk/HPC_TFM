@@ -38,7 +38,7 @@ De esta forma, una red neuronal dispersa puede contener alrededor de un 80\texta
     \centering
     \vspace*{0.5cm}
     \def\svgwidth{0.85\textwidth}
-    \input{pdf_tex/sparse_nn/sparse_nn_sample.pdf_tex}
+    \input{pdf_tex/sparse_nn/sparse_nn_svgnn.pdf_tex}
     \caption{Red neuronal dispersa Feed-Forward}
     \label{fig:sparse_nn_sample}
 \end{figure}
@@ -58,10 +58,68 @@ Tras sospechas previas de algunos investigadores como George Cybenko acerca de q
 
 \section{Redes neuronales densas}
 \label{sec:redes_reuronales_densas}
-Como se comenta en la sección anterior, dndependientemente del número de capas de la red, sea profunda o ``convencional'', una red neuronal densa es aquella en la que para $m$ neuronas en la capa $M$, y $n$ neuronas en la capa $N$, donde la neurona $x$ de la capa $M$ se denota $M_{x}$ existe siempre una conexión de $M_{m}$ a $N_{n}$ ($m\longrightarrow n$) (\ref{eq:dense_nn}):
+Como se comenta en la sección anterior, independientemente del número de capas de la red, sea profunda o ``convencional'', una red neuronal densa es aquella en la que para $m$ neuronas en la capa $M$, y $n$ neuronas en la capa $N$, donde la neurona $x$ de la capa $M$ se denota $M_{x}$ existe siempre una conexión de $M_{m}$ a $N_{n}$, es decir ($m\longrightarrow n$):
 
 \begin{equation}
 \forall m \in M \:\wedge\: \forall n \in N, \: m\longrightarrow n
 \label{eq:dense_nn}
 \end{equation}
 
+De esta forma, para la ejecución (inferencia) de una red neuronal densa feed-forward, serán necesarias únicamente una simple multiplicación de matrices, una suma de matrices para tener en cuenta los \textit{bias}, y aplicar una función de transferencia.
+
+Esto se puede apreciar en la Figura \ref{fig:nn_matrix_dense}\footnote{Imágenes con este estilo artístico han sido obtenidas de \url{https://ml-cheatsheet.readthedocs.io/en/latest/forwardpropagation.html}}. En ésta se puede ver la inferencia de 4 datos, correspondientes con el número de filas de entrada a las capas. Como también se puede apreciar, la anchura de cada capa se corresponde con el número de columnas de la misma. 
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.85\textwidth]{img/neural_network_matrix_dense.png}
+    \caption{Visualización de inferencia en redes neuronales densas}
+    \label{fig:nn_matrix_dense}
+\end{figure}
+
+De esta forma, si el dato (vectorial por la naturaleza de estas redes) tiene 24 elementos, será necesaria una capa de entrada de 24 neuronas (24 columnas $x_{1} .. x_{24}$ según notación de la Figura \ref{fig:nn_matrix_dense}), y si queremos inferir sobre 1000 de estos datos, esto se puede hacer en una sola ejecución, siendo el número de columnas también de 1000.
+
+O dicho de otra manera, sea la capa $M_{m}$ una capa completamente conexa con $m$ neuronas, a la cual se le introduce un dato $x_{m}$, donde el peso de la neurona $M_{i}$ hacia $N_{j}$ es denotado por $w_{M,i,j}$, y la función de transferencia es $\phi$, tenemos que la salida de una capa será:
+
+\begin{equation}
+    x_{N,i} = \phi\left(\sum_{j}w_{N,i,j}x_{M,j}\right)
+    \label{eq:dense_nn_eq}
+\end{equation}
+
+A esta función se le puede añadir el \textit{bias} de forma explícita ($\sum\left([\dots] x_{M,j}\right) + bias_{N,i}$), o de forma implícita, siendo el \textit{bias} una conexión más, con un valor constante de 1, cuyo peso es el multiplicador que da el \textit{bias} resultante.
+
+\section{Redes neuronales dispersas}
+\label{sec:redes_reuronales_dispersas}
+Las redes neuronales dispersas cuentan con una ventaja, y es el menor número de conexiones entre neuronas, o directamente el menor número de neuronas en la arquitectura. A pesar de esto, en realidad el fundamento matemático es el mismo, una simple multiplicación de matrices. Sin embargo, a pesar de ser el mismo funcionamiento base, se pueden explotar ciertas características tanto de la estructura de las matrices dispersas como de su multiplicación para obtener mejorías en el tamaño del modelo o en rendimiento, respectivamente.
+
+\subsection{Fundamentos de matrices dispersas}
+\label{ssec:fundamentos_matrices_dispersas}
+Una matriz es dispersa cuando gran parte de su contenido son únicamente ceros. El cuan dispersa es una matriz se cuantifica mediante el ``grado de dispersión'' o \textit{sparsity}. Una matriz dispersa $10 \times 10$, con tres elementos diferentes de cero (\textit{non-zero elements} o directamente \textit{non-zero(es)}) será una matriz dispersa con una \textit{sparsity} del $97\%$, y una densidad del $100\%-97\% = 3\%$.
+
+\subsection{Almacenamiento de matrices dispersas}
+\label{ssec:almacenamiento_matrices_dispersas}
+Existen múltiples métodos para el almacenamiento de matrices dispersas en memoria, pero uno de los más sencillos de comprender, y que se usa en la \acrshort{poc} para la creación de las matrices dispersas es el \acrshort{coo} o \textit{\acrlong{coo}}.
+
+Este formato consiste en el almacenado en tres vectores, \texttt{V}, \texttt{C} y \texttt{R}, (\textit{Value}, \textit{Column}, \textit{Row}). Para cada entrada en el vector \texttt{V}, se crea una entrada en la misma posición para los vectores \texttt{C} y \texttt{R}, indicando la columna y fila en la que se ubica el valor \textit{non-zero}. Por diseño, el tamaño de cada uno de estos tres vectores tiene que ser igual del del número de \textit{non-zeroes}, denotado por \texttt{NZ}. Este formato es particularmente cómodo para la creación de matrices dispersas de forma ágil, pero existen formatos más avanzados, tanto en tamaño como en eficiencia, como el \acrshort{csr} o \textit{\acrlong{csr}}\footnote{Más información en \url{https://en.wikipedia.org/wiki/Sparse_matrix\#Compressed_sparse_row_(CSR,\_CRS\_or\_Yale\_format)}}.
+
+De esta forma, a continuación se muestra un ejemplo para una matriz dispersa almacenada en formato \acrshort{coo}. A pesar de que esta matriz no es particularmente dispersa, es únicamente con fines explicativos:
+
+\begin{center}
+    $\begin{pmatrix}
+        1 & 0 & 0 & 0\\
+        0 & 2 & 0 & 0\\
+        0 & 3 & 4 & 0\\
+        0 & 0 & 0 & 5
+    \end{pmatrix}$
+    \vspace*{0.5cm}
+\begin{lstlisting}[]
+NZ = 5
+
+V = [ 1 2 3 4 5 ]
+C = [ 0 1 1 2 3 ]
+R = [ 0 1 2 2 3 ]
+\end{lstlisting}
+\end{center}
+
+\subsection{Propiedades del producto de matrices dispersas}
+\label{ssec:propiedades_producto_matrices_dispersas}
+Al multiplicar... TODO
