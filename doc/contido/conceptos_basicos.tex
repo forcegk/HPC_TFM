@@ -93,7 +93,7 @@ Las redes neuronales dispersas cuentan con una ventaja, y es el menor número de
 
 \subsection{Fundamentos de matrices dispersas}
 \label{ssec:fundamentos_matrices_dispersas}
-Una matriz es dispersa cuando gran parte de su contenido son únicamente ceros. El cuan dispersa es una matriz se cuantifica mediante el ``grado de dispersión'' o \textit{sparsity}. Una matriz dispersa $10 \times 10$, con tres elementos diferentes de cero (\textit{non-zero elements} o directamente \textit{non-zero(es)}) será una matriz dispersa con una \textit{sparsity} del $97\%$, y una densidad del $100\%-97\% = 3\%$.
+Una matriz es dispersa cuando gran parte de su contenido son únicamente ceros. El cuan dispersa es una matriz se cuantifica mediante el ``grado de dispersión'' o \textit{sparsity}. Una matriz dispersa $10 \times 10$, con tres elementos diferentes de cero (\textit{non-zero elements} o directamente \textit{non-zero(es)}) será una matriz dispersa con una \textit{sparsity} del $97\%$, y una densidad del $3\% \:(=100\%-97\%)$.
 
 \subsection{Almacenamiento de matrices dispersas}
 \label{ssec:almacenamiento_matrices_dispersas}
@@ -122,4 +122,67 @@ R = [ 0 1 2 2 3 ]
 
 \subsection{Propiedades del producto de matrices dispersas}
 \label{ssec:propiedades_producto_matrices_dispersas}
-Al multiplicar... TODO
+Al multiplicar dos matrices densas no hay duda de que como resultado se obtendrá una matriz densa, salvo contadas excepciones, como multiplicar una matrix por su inversa. Sabiendo que el producto de una matriz dispersa obtiene el mismo resultado que una multiplicación de matrices densas mediante un algoritmo diferente, podemos clasificar los productos de matrices en función de su \textit{sparsity} de forma genérica.
+
+Esta clasificación, de nuevo, puede variar en función de las propiedades de la matriz, pero es la base sobre la cual se construyen las funciones de \acrshort{blas} (\textit{\acrlong{blas}}) y las implementaciones BLAS\_Sparse. De esta forma, obtendremos los siguientes tipos de producto de matrices:
+
+\begin{itemize}
+    \item Densa $\times$ Densa $=$ Densa ($D\times D$)
+    \item Dispersa $\times$ Densa $=$ Densa ($d\times D$)
+    \item Dispersa $\times$ Dispersa $=$ Dispersa / Densa ($d\times d$)
+\end{itemize}
+
+Estos tres tipos principales de productos, en típico \textit{BLAS-fashion} se pueden realizar para tipos de dato \texttt{S}, \texttt{D}, \texttt{C} y \texttt{Z} (\textit{Single}, \textit{Double}, \textit{Single Complex}, \textit{Double Complex}).
+De esta forma, podemos obtener las siguientes funciones estándar, a pesar de que en la parte \textit{sparse} de \acrshort{blas} hay menor consenso debido a múltiples librerías que difieren del estándar. Por ejemplo, los tipos especificados en la función se van perdiendo conforme se avanza hacia implementaciones genéricas en C++.
+
+\begin{itemize}
+    \item \texttt{[sdcz]gemm()} para $D\times D$
+    \item \texttt{[sdcz]usmm()} o \texttt{spmm()} para $d\times D$
+    \item \texttt{sp[sdcz]gemm()} o \texttt{spmsp()} para $d\times d$
+\end{itemize}
+
+Sabiendo las características de una red neuronal dispersa, y tal como se comenta más adelante en esta memoria, en la \acrshort{poc} se emplea el producto $d\times D$, debido a la naturaleza dispersa de los pesos y a la densa de los datos de entrada. De todas formas, en función de la naturaleza de los datos de entrada podrían emplearse también vectores de entrada dispersos, aunque lo más probable es que para eso quizás una red neuronal feed forward unidimensional no sea lo más apropiado, y ya debamos sugerir otras arquitecturas de red como las convolucionales, debido a que un vector disperso no suele tener mucho sentido, pero una matriz dispersa si.
+
+\subsection{Visualización de red neuronal dispersa}
+\label{ssec:visualizacion_nn_dispersa}
+Tal como se muestra en la Sección \ref{sec:redes_reuronales_densas}, es sencillo visualizar el proceso de inferencia como una simple multiplicación de matrices, por lo que una multiplicación con una matriz de pesos debería ser sencillo de visualizar de igual manera.
+
+Esto es correcto, es muy sencillo de visualizar de no ser por un pequeño problema que trataré más adelante. Y es que la función de multiplicación de matrices $d\times D$, \texttt{[sdcz]usmm()}, tiene la siguiente firma, que si bien parece algo adecuado para nuestra carga de trabajo tiene un detalle sutil que requiere un poco de detenimiento. A continuación se muestra para el lenguaje C y para simple precisión la firma y parámetros de la función \texttt{BLAS\_susmm}:
+
+\begin{lstlisting}[language=C]
+int BLAS_susmm( enum blas_order_type    order,
+                enum blas_trans_type    transA,
+                int                     nrhs,
+                float                   alpha,
+                blas_sparse_matrix      A,
+                const float *           b,
+                int                     ldb,
+                float *                 c,
+                int                     ldc 
+)
+
+/**
+ * order    layour of the dense array.
+ * transA   Transposition operator for matrix A.
+ * nrhs     Number of right hand side columns.
+ * A        A valid matrix handle.
+ * alpha    Value for $ \alpha $.
+ * b        Dense vector b.
+ * ldb      Leading dimension of b.
+ * c        Dense vector c.
+ * ldc      Leading dimension of c.
+ */
+\end{lstlisting}
+
+El inconveniente de esta función, que calcula $C = \alpha AB + C$ es que la matriz $A$ debe ser dispersa, algo que, fijándonos de nuevo en la Figura \ref{fig:nn_matrix_dense}, no se cumple. Es decir, la matriz dispersa es la de pesos $w$, por lo que parece necesaria una función que trate a $B$ como una matriz dispersa. Dicha función no existe.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{img/neural_network_matrix_sparse/neural_network_matrix_sparse.png}
+    \caption{Visualización de inferencia en redes neuronales dispersas}
+    \label{fig:nn_matrix_sparse}
+\end{figure}
+
+Sin embargo, empleando las propiedades de las matrices, es posible modificar el orden de las mismas, y así poder encajar cada matriz en la firma. Para esto se emplea una propiedad básica de las matrices, $C^{T} = (AB)^{T} = A^{T}B^{T}$. De esta forma, al transponer la matriz de pesos mediante el parámetro \texttt{transA}, y multiplicando esto por la entrada de la red anterior, obtendremos la salida $C^{T}$. Esto supone un pequeño overhead, al tener que transponer la entrada a la capa de entrada, así como la salida de la capa de salida. Sin embargo, dicho overhead puede ser mitigado en gran medida, en función de la arquitectura de la red, así como de la fuente de datos, que es probable que con pequeñas modificaciones pueda exportar los datos transpuestos previamente.
+
+Esta estrategia se puede apreciar en la Figura \ref{fig:nn_matrix_sparse}, donde a diferencia de la Figura \ref{fig:nn_matrix_dense} se han transpuesto los pesos y las entradas, y se ha etiquetado correspondientemente mediante superíndices.
