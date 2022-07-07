@@ -1,0 +1,164 @@
+\chapter{Implementación y POC}
+\label{chap:implementacion_poc}
+
+\lettrine{U}{na} vez identificados los puntos de intervención y posible mejora, se desarrolla una prueba de concepto, a pesar de que es más que probable que esta primera aproximación básica no mejore el muy optimizado proceso que emplea TensorFlow. El objetivo de esta prueba de concepto es más bien el aprendizaje a bajo nivel, perfilado del código y extracción de características del \textit{workload}, así como intentar proponer mejoras sobre la base ahora tangible.
+
+Para esta \textit{\acrlong{poc}} se ha creado un \textit{Jupyter Notebook} en el cual se puede ir ejecutando paso a paso cada etapa en la generación y entrenamiento de la red. 
+
+\section{Extracción de valores para modelos TensorFlow}
+\label{sec:extraccion_valores_modelo_tf}
+El primer paso para la implementación de esta \acrshort{poc} es la extracción de los valores desde el modelo TensorFlow. Este modelo puede venir dado previamente en formato \texttt{.pb} o se puede crear y entrenar desde python sin exportarlo en ningún momento.
+
+Como los modelos más grandes y complejos no suelen ser modelos exclusivamente \textit{feed-forward} con funciones de activación exclusivamente sigmoides, lo más cómodo es simplemente generar una red neuronal de pruebas, entrenarla, y exportar el resultado a C.
+
+\subsection{Desde un modelo guardado}
+\label{ssec:desde_modelo_guardado}
+Para realizar esto, que queda fuera del objetivo de este trabajo, bastaría con emplear la función \texttt{saved\_model.load} de TensorFlow, sobre un modelo \texttt{.pb} previamente exportado \cite{tensorflow_saved_model}. Esto permitiría importar grandes modelos preentrenados, y realizar mediciones sobre modelos ``del mundo real'', pero implicaría una gran cantidad de horas de trabajo y adaptación, poco adecuadas para la longitud de este proyecto, debido a la gran cantidad de parámetros, tipos de capas y funciones de activación, entre otros, que no se han implementado.
+
+Por esta razón, este proyecto se limita a la extracción para modelos puramente \textit{feed-forward} con función de activación sigmoide (a pesar de que añadir soporte para distintas funciones de activación sería relativamente sencillo de implementar).
+
+\subsection{Desde un modelo de pruebas}
+\label{ssec:desde_modelo_de_pruebas}
+Este es el camino más sencillo a la hora de implementar lo que recordemos es simplemente un laboratorio básico para poder realizar mediciones y sacar conclusiones.
+
+A continuación se muestran, por orden de aparición en el \textit{notebook}, los pasos de entrenamiento de la red. De aquí en adelante la palabra \acrlong{tf} aparecerá muy habitualmente, por lo que también será referida como simplemente \acrshort{tf}.
+
+\begin{enumerate}
+    \item Se importa el conjunto de datos. En este caso, y tras pedir consejo a usuarios más avanzados de \acrshort{tf}, se ha empleado el \textit{dataset} \texttt{german\_credit\_numeric}, debido a la simplicidad de sus entradas y salidas. Este conjunto de datos cuenta con 1000 entradas en el mismo, y se emplea para intentar parametrizar el riesgo crediticio de un individuo mediante redes neuronales.\medskip
+\begin{lstlisting}[language=Python]
+ds = tfds.load('german_credit_numeric', split='train', as_supervised=True)
+\end{lstlisting}
+
+    \item Se indican la función de pérdida, el optimizador y la métrica. Esto, si bien sería un tema muy interesante si este trabajo tratase de obtener buenos resultados con esta red, en este caso es irrelevante que la arquitectura de la red sea buena o no, así como la calidad de su entrenamiento y resultados.
+
+    \item Se crea un modelo secuencial, es decir un modelo ``capa por capa'', en el que cada capa va a continuación de la siguiente. Tras crearlo se \textit{buildea} y se compila.\medskip
+\begin{lstlisting}[language=Python]
+model = tf.keras.models.Sequential(name= "MySampleModel")
+model.add(tf.keras.layers.InputLayer((tamano_entrada,)))
+model.add(tf.keras.layers.Dense(units = h0_size, activation="sigmoid"))
+model.add(tf.keras.layers.Dense(units = h1_size, activation="sigmoid"))
+model.add(tf.keras.layers.Dense(units = 1, activation="sigmoid"))
+
+model.build()
+
+model.compile(loss=fn_perdida, optimizer=optimizador, metrics=metrica)
+\end{lstlisting}
+
+    \item Tras la creación del modelo hay que entrenarlo. Este complejo proceso a nivel de implementación, basado en el algoritmo de \textit{backpropagation}, y con todos los detalles que este implica, se puede realizar en, al más puro estilo Python, con un \textit{one-liner}.\medskip
+\begin{lstlisting}[language=Python]
+history =  model.fit(x=lote_entrenamiento[0], y = lote_entrenamiento[1], batch_size = 20, epochs=num_epochs)
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Extracción de valores}
+\label{ssec:extraccion_valores}
+Ahora que se cuenta con un modelo de red neuronal, de discutible calidad, pero funcionalmente idéntico a otro mejor, con mayor cantidad de neuronas o más capas, se puede comenzar con la extracción de valores de cada capa.
+
+\begin{enumerate}
+    \item Primero es necesario obtener tanto los pesos como los \textit{bias}. Para esto se itera sobre las capas del modelo. En cada capa del modelo se puede llamar a la función \texttt{get\_weights()}. En el restultado que devuelve, los pesos se encuentran en un array de arrays en la posición 0, y los \textit{bias} un un array en la 1.\medskip
+\begin{lstlisting}[language=Python]
+for layer in model.layers:
+    print(f"LAYER{idx}_WEIGHTS:")
+    print(layer.get_weights()[0])
+    print(f"LAYER{idx}_BIAS:")
+    print([layer.get_weights()[1]])
+
+# LAYER1_WEIGHTS:
+# [[-0.08928536  0.08118167 -1.6078503  -0.29092655 -0.33163825]
+#                               ...
+#  [-0.16627118 -0.36254594  0.03569769  0.11377215 -0.19968267]]
+# LAYER1_BIAS:
+# [ 0.00605693  0.00038876  0.29822487  0.01296887 -0.02708104]
+# LAYER2_WEIGHTS:
+# [[-0.43815556  0.6910728   0.45901924]
+#                   ...
+#  [ 1.3233485  -0.26594874 -0.5277702 ]]
+# LAYER2_BIAS:
+# [-0.1541544  -0.04604432  0.15921216]
+# LAYER3_WEIGHTS:
+# [[-3.4663067 ]
+#       ...
+#  [ 1.5324626 ]]
+# LAYER3_BIAS:
+# [1.3300072]
+\end{lstlisting}
+    Sin embargo, esta aproximación a la hora de obtener los pesos es problemática. Y es que al mostrar los pesos en formato humano (decimal), se pierde precisión. Para solucionar esto se necesita algo más directo y de bajo nivel.
+    
+    \item La solución a la que se ha llegado es la más evidente, exportar los datos en binario codificado en hexadecimal, para leerlo como dato en C. Realizar esto en Python no es particularmente difícil, y si bien existen mejores formas de interfacear con código C, se ha de recordar que esto simplemente es una prueba de laboratorio y no un producto final.
+    
+    De esta forma, se define una función para la conversión de datos en hexadecimal:\medskip
+\begin{lstlisting}[language=Python]
+# https://docs.python.org/3/library/struct.html
+FLOAT_BE = ">f"
+FLOAT_LE = "<f"
+DOUBLE_BE = ">d"
+DOUBLE_LE = "<d"
+
+def np_value_to_hex(value, byte_format):
+    return bytearray(struct.pack(byte_format, value)).hex()
+
+# byte_format is target format for output
+def np_array_to_hex(array, byte_format):
+    return map(
+        lambda layer: list(
+            map(lambda v: np_value_to_hex(v, byte_format), layer)
+        ),
+        array,
+    )
+\end{lstlisting}
+    Y tras crear dicha función, ahora con un poco de manejo de strings, fácilmente se puede obtener un resultado como el siguiente:\medskip
+\begin{lstlisting}[language=Python]
+# LAYER1_WEIGHTS:
+# bdb6db3e,3da64293,bfcdce0a,be94f453,bea9cc7d
+#                     ...
+# be2a42fe,beb99f9f,3d1237be,3de90160,be4c799d
+# LAYER1_BIAS:
+# 3bc67940,39cbd218,3e98b0ee,3c547b67,bcddd911
+# LAYER2_WEIGHTS:
+# bee055ed,3f30ea26,3eeb0492
+#            ...
+# 3fa9637c,be882a6f,bf071bf3
+# LAYER2_BIAS:
+# be1ddaa7,bd3c98f7,3e230883
+# LAYER3_WEIGHTS:
+# c05dd7f8
+#   ...
+# 3fc427bc
+# LAYER3_BIAS:
+# 3faa3dad
+\end{lstlisting}
+
+    \item Por último pero no por ello menos importante, se han de exportar también los datos de entrada del propio dataset. Como se discutirá más adelante, el formato del documento que lee el código C compilado contará con una primera línea especificando el número de líneas que va a leer, y un dato por línea. De esta forma, si la entrada contiene 24 parámetros y se ha de inferir 1000 datos, el contenido del documento será de 1001 líneas, siendo la primera \texttt{1000}, y el resto conteniendo los datos a inferir.\medskip
+\begin{lstlisting}[language=Python]
+# Get original stdout here, in order to print to a file
+my_stdout = sys.stdout
+
+with open('input.txt', 'w') as f:
+    sys.stdout = f
+    # Print dims to beginning of file
+    print(len(lote_entrenamiento[0]))
+    # and data to the rest of it
+    for arr in lote_entrenamiento[0]:
+        print(*arr.numpy().tolist(), sep=',')
+    # Finally restore stdout
+    sys.stdout = my_stdout
+\end{lstlisting}
+    Al ejecutar el siguiente comando, se crea en el directorio de trabajo el fichero \texttt{input.txt}, que contiene 1000 entradas. El fichero se ha recortado a 5 entradas por conveniencia.\medskip
+\begin{lstlisting}
+5
+3,6,4,13,2,5,1,4,3,28,3,2,2,2,1,1,0,1,0,0,1,0,0,1
+4,4,2,6,1,2,2,3,1,23,3,1,2,1,1,0,0,1,0,1,0,0,1,0
+4,24,4,20,1,3,2,4,3,37,3,1,1,2,1,1,0,1,0,0,1,0,0,1
+4,18,2,11,5,2,2,2,1,21,3,1,1,2,1,0,0,1,0,1,0,0,0,1
+4,6,2,13,3,3,1,4,1,62,3,1,1,1,1,0,0,1,0,0,1,0,0,1
+\end{lstlisting}
+
+    Conviene recalcar que en este caso el tipo de los datos de entrada es entero. En caso de dicho caso ser flotante, se procedería a exportar en formato hexadecimal para, como previamente, no perder precisión.
+\end{enumerate}
+
+\section{Generación dinámica de código C a partir del modelo TensorFlow}
+\label{sec:generacion_din_modelo_tf}
+Tras ver cómo extraer los valores de pesos, \textit{bias}, y datos de entrada del entorno de \acrlong{tf}, se cuenta con todas las herramientas necesarias para generar el código C, o prácticamete cualquier código si se cuenta con las herramientas y conocimientos adecuados.
+
+\subsection{Matrices densas}
+La forma más sencilla y cronológicamente la primera en ser implementada es la basada en matrices densas. Esta implementación se apoya en la librería ampliamente disponible, \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}, y a pesar de que el proceso de desarrollo, pruebas, automatización, y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.
