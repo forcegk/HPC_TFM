@@ -21,6 +21,8 @@ Por esta razón, este proyecto se limita a la extracción para modelos puramente
 \label{ssec:desde_modelo_de_pruebas}
 Este es el camino más sencillo a la hora de implementar lo que recordemos es simplemente un laboratorio básico para poder realizar mediciones y sacar conclusiones.
 
+\subsubsection{Fase común}
+\label{sssec:modelo_pruebas_fase_comun}
 A continuación se muestran, por orden de aparición en el \textit{notebook}, los pasos de entrenamiento de la red. De aquí en adelante la palabra \acrlong{tf} aparecerá muy habitualmente, por lo que también será referida como simplemente \acrshort{tf}.
 
 \begin{enumerate}
@@ -47,6 +49,54 @@ model.compile(loss=fn_perdida, optimizer=optimizador, metrics=metrica)
     \item Tras la creación del modelo hay que entrenarlo. Este complejo proceso a nivel de implementación, basado en el algoritmo de \textit{backpropagation}, y con todos los detalles que este implica, se puede realizar en, al más puro estilo Python, con un \textit{one-liner}.\medskip
 \begin{lstlisting}[language=Python]
 history =  model.fit(x=lote_entrenamiento[0], y = lote_entrenamiento[1], batch_size = 20, epochs=num_epochs)
+\end{lstlisting}
+\end{enumerate}
+
+\subsubsection{Fase de podado}
+\label{sssec:modelo_pruebas_fase_podado}
+En caso de querer podar la red para aumentar su \textit{sparsity}, el procedimiento es muy similar al descrito en \cite{tensorflow_prune_model}. Los pasos para realizar este procedimiento se describen a continuación:
+\begin{enumerate}
+    \item Se crean los parámetros para podar el modelo hasta una \textit{sparsity} en este caso del 80\%. Previamente al podado copia el modelo original a un modelo diferente, \texttt{model\_for\_pruning}.\medskip
+\begin{lstlisting}[language=Python]
+prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
+
+batch_size = 20
+sparse_epochs = 2
+validation_split = 0.1
+
+end_step = np.ceil(tamano_lote/batch_size).astype(np.int32) * sparse_epochs
+
+pruning_params = {
+    'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(
+        initial_sparsity=0,                                                    
+        final_sparsity=0.8,
+        begin_step=0,
+        end_step=end_step
+    )
+}
+
+# clone the model. If we do not do this, the original model will be altered too
+model_for_pruning = tf.keras.models.clone_model(model)
+
+model_for_pruning = prune_low_magnitude(model_for_pruning, **pruning_params)
+
+# `prune_low_magnitude` requires a recompile.
+model_for_pruning.compile(optimizer=optimizador, # 'adam',
+                loss=fn_perdida,
+                metrics=metrica)
+
+model_for_pruning.summary()
+\end{lstlisting}
+    \item Se entrena el modelo podado. Este procedimiento es muy similar al entrenamiento en una línea explicado previamente, únicamente añadiendo el \textit{callback} necesario para el entrenamiento de un modelo podado.
+\begin{lstlisting}[language=Python]
+num_epochs =  500
+
+callbacks = [
+    tfmot.sparsity.keras.UpdatePruningStep(),
+]
+
+history = model_for_pruning.fit(lote_entrenamiento[0], lote_entrenamiento[1], batch_size=batch_size, epochs=num_epochs, validation_split=validation_split, callbacks=callbacks)
+history.history
 \end{lstlisting}
 \end{enumerate}
 
@@ -156,9 +206,280 @@ with open('input.txt', 'w') as f:
     Conviene recalcar que en este caso el tipo de los datos de entrada es entero. En caso de dicho caso ser flotante, se procedería a exportar en formato hexadecimal para, como previamente, no perder precisión.
 \end{enumerate}
 
+\subsubsection{Extracción de datos dispersos}
+\label{sssec:extraccion_datos_dispersos}
+Para la extracción de datos dispersos se procede de igual forma que con datos densos. Iterando a través de cada una de las capas con funciones como las expuestas previamente, se obtienen resultados como el siguiente:\medskip
+\begin{lstlisting}[language=Python]
+# LAYER1_WEIGHTS:
+# 80000000,80000000,00000000,00000000,00000000
+#                     ...
+# 3ec9393d,80000000,80000000,00000000,00000000
+# LAYER1_BIAS:
+# 39fcfbe4,3854f5e8,b82401d6,b8b52b95,ba28adf7
+# LAYER2_WEIGHTS:
+# 80000000,00000000,80000000
+#            ...
+# 80000000,80000000,3f5a98cf
+# LAYER2_BIAS:
+# 3bea3c98,3d964016,3b89974c
+# LAYER3_WEIGHTS:
+# 80000000
+#   ...
+# 3f61fe09
+# LAYER3_BIAS:
+# 3ec81415    
+\end{lstlisting}
+
+Como se puede apreciar dentro de las zonas recortadas, la mayor parte de datos son 0x80000000 o 0x00000000, siendo ambos representaciones del número cero en coma flotante. Con ayuda de la función \texttt{nonzero} de \texttt{numpy} se puede extraer facilmente cada valor diferente de cero con sus coordenadas vertical y horizontal para importar más adelante en C, tal como se muestra en la sección siguiente, \nameref{sec:importacion_valores_c}.
+
+\section{Importación de valores en C}
+\label{sec:importacion_valores_c}
+En esta sección se habla de cómo se importan los datos extraídos del modelo \acrshort{tf} denso o disperso, creado en la sección anterior.
+
+\subsection{Importación de matrices densas}
+\label{ssec:importacion_matrices_densas}
+El lenguaje de programación C almacena las matrices por filas. Esto es, dada una matriz $M \times N$, se almacenarán en memoria $N$ elemenos de la primera fila, seguidos por $N$ elementos de la segunda, etc. Aprovechando esta característica de C, y haciendo uso del tan granular acceso a bajo nivel que nos permite hacer este lenguaje, se importan las matrices de pesos y \textit{bias} de las diferentes capas desde la zona de memoria constante, o para x86, la sección \texttt{.text}. Esto implica que una vez el programa se carga a memoria no lee ningún archivo salvo la entrada de datos.
+
+Mediante manejo de \textit{strings} en Python, y recordando que la arquitectura x86(y \_64) es \textit{little endian}\footnote{\url{https://es.wikipedia.org/wiki/Endianness}}, los valores constantes se importan al código con las siguientes líneas:\medskip
+\begin{lstlisting}[language=C]
+#define INPUT_SIZE 24
+#define LAYER1_SIZE 5
+const fp32 * layer1_weights = (fp32 *)
+        "\xf3\x79\x85 /* [...] */ \x8c\xab\xbe";
+const fp32 * layer1_bias = (fp32 *)
+        "\x3f\x1b\x5f /* [...] */ \x54\x37\x3c";
+#define LAYER2_SIZE 3
+const fp32 * layer2_weights = (fp32 *)
+        "\x16\xbd\xc5 /* [...] */ \x8d\x77\x3f";
+const fp32 * layer2_bias = (fp32 *)
+        "\xfc\x06\x25 /* [...] */ \xa4\x2a\xbe";
+#define LAYER3_SIZE 1
+const fp32 * layer3_weights = (fp32 *)
+        "\x09\x88\x1d /* [...] */ \x57\x04\x40";
+const fp32 * layer3_bias = (fp32 *) "\xc8\x2d\x40\x3d";
+\end{lstlisting}
+
+Estos valores, al ser \textit{casteados} a un vector de \texttt{fp32}, más adelante pueden ser accedidos con el \textit{stride} de dicho tipo de datos.
+
+\subsection{Importación de matrices dispersas}
+\label{ssec:importacion_matrices_dispersas}
+En el caso de las matrices dispersas el almacenamiento de datos no es tan sencillo. Como se comenta en el Capítulo de \nameref{chap:conceptos_basicos}, existen múltiples maneras de representar una matriz dispersa en memoria. La que se emplea en la creación de dicha matriz es la \texttt{COO} (Subsección \ref{ssec:almacenamiento_matrices_dispersas}). De esta manera, es suficiente con exportar una lista de valores acompañado con las coordenadas de cada uno de ellos. Estos valores, tanto los de la matriz como las coordenadas de los mismos, y de igual manera que en la \nameref{ssec:importacion_matrices_densas} se guardan en la sección de texto.
+
+Esto significa que, en comparación con la versión densa, el vector de pesos es mucho más pequeño (en función de la densidad de la matriz que representa), y aparecen dos vectores de coordenadas para \texttt{i} y \texttt{j}:\medskip
+\begin{lstlisting}[language=C]
+#define INPUT_SIZE 24
+#define LAYER1_SIZE 5
+#define layer1_nz 24
+const fp32 * layer1_weights = (fp32 *)
+        "\x7c\xce\xbc /* [...] */ \x39\xc9\x3e";
+const int layer1_i[layer1_nz] =
+        {1,1,2,3,3,4,8,11,12,12,13,14,15,15,15,17,18,18,19,19,20,21,21,23};
+const int layer1_j[layer1_nz] =
+        {0,1,1,1,2,0,3,2,1,2,1,4,1,2,4,3,1,2,0,1,2,3,4,0};
+const fp32 * layer1_bias = (fp32 *)
+        "\xe4\xfb\xfc /* [...] */ \xad\x28\xba";
+#define LAYER2_SIZE 3
+#define layer2_nz 3
+const fp32 * layer2_weights = (fp32 *)
+        "\xe2\x81\x50 /* [...] */ \x98\x5a\x3f";
+const int layer2_i[layer2_nz] = {2,3,3};
+const int layer2_j[layer2_nz] = {2,0,2};
+const fp32 * layer2_bias = (fp32 *)
+        "\x98\x3c\xea /* [...] */ \x97\x89\x3b";
+#define LAYER3_SIZE 1
+#define layer3_nz 1
+const fp32 * layer3_weights = (fp32 *) "\x09\xfe\x61\x3f";
+const int layer3_i[layer3_nz] = {1};
+const int layer3_j[layer3_nz] = {0};
+const fp32 * layer3_bias = (fp32 *) "\x15\x14\xc8\x3e";
+\end{lstlisting}
+
+
 \section{Generación dinámica de código C a partir del modelo TensorFlow}
 \label{sec:generacion_din_modelo_tf}
 Tras ver cómo extraer los valores de pesos, \textit{bias}, y datos de entrada del entorno de \acrlong{tf}, se cuenta con todas las herramientas necesarias para generar el código C, o prácticamete cualquier código si se cuenta con las herramientas y conocimientos adecuados.
 
+\subsection{Decisiones previas de diseño}
+\label{ssec:decisiones_previas_diseno}
+Los útiles comunes a cualquier código generado, sea denso o disperso, se han centralizado en los ficheros \texttt{common.\{c|h\}}.
+
+Primeramente se ha decidido emplear un tipo \texttt{union} para la implementación de los datos en coma flotante, al permitir estos un control superior a nivel de byte, sin complicaciones adicionales como \textit{casting} de punteros.
+
+Los únicos dos tipos de datos implementados son \texttt{fp32} y \texttt{fp64}, con nombres, considero, bastante representativos. El tipo unión, por ejemplo, para el flotante de 32 bits es el siguiente:\medskip
+\begin{lstlisting}[language=C]
+typedef union _fp32 {
+    uint32_t raw;
+    float val;
+    uint8_t byte[4];
+} fp32;
+\end{lstlisting}
+
+Así, las funciones implementadas tendrán versiones para flotante de 32 y 64 bits. El sufijo que indica la precisión del flotante será \texttt{\_\_fp32} y \texttt{\_\_fp64} para 32 y 64 bits de precisión, respectivamente. Las pocas funciones implementadas han sido necesarias para el paso de aplicar el \textit{bias}, y siguen esta nomenclatura, a fin de mejorar una futura parametrización extra en la generación del código.
+
+Se ha barajado también la posibilidad de emplear funciones genéricas que brinda el compilador gcc, pero al final por simplicidad, y dada la naturaleza estática de una \textit{\acrlong{poc}}, se ha optado por no incluir estos macros. Un ejemplo para la función \texttt{fast\_sigmoid} sería la siguiente:\medskip
+\begin{lstlisting}[language=C]
+#define fast_sigmoid(X) _Generic((X), \
+fp32:fast_sigmoid__fp32, \
+fp64:fast_sigmoid__fp64 \
+)(X)
+
+#pragma inline fast_sigmoid__fp32, fast_sigmoid__fp64
+fp32 fast_sigmoid__fp32(fp32);
+fp64 fast_sigmoid__fp64(fp64);
+\end{lstlisting}
+
+
 \subsection{Matrices densas}
-La forma más sencilla y cronológicamente la primera en ser implementada es la basada en matrices densas. Esta implementación se apoya en la librería ampliamente disponible, \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}, y a pesar de que el proceso de desarrollo, pruebas, automatización, y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.
+\label{ssec_gdin_matrices_densas}
+La forma más sencilla y cronológicamente la primera en ser implementada es la basada en matrices densas. Esta implementación se apoya en la ampliamente disponible librería \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}. A pesar de que el proceso de desarrollo, pruebas, automatización, y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.
+
+Tal como se comenta en el Capítulo de \nameref{chap:conceptos_basicos}, Sección \ref{sec:redes_reuronales_densas}, el programa debe hacer lo siguiente:
+
+\begin{enumerate}
+    \item Leer los datos de entrada
+    \item Multiplicar los datos de entrada por cada una de las capas
+    \item Tratar adecuadamente los datos de salida
+\end{enumerate}
+
+Estos sencillos tres pasos tienen su complicación, debido a que hay que implementar todo de cero y automatizarlo.
+
+\begin{enumerate}
+    \item Leer los datos de entrada es quizás de lo más sencillo. Es manejo de ficheros básico mediante \texttt{fscanf}:\medskip
+\begin{lstlisting}[language=C]
+FILE *inputfile;
+fprintf(stderr, "*** Opening %s as input ***\n", argv[1]);
+if((inputfile = fopen(argv[1], "r")) == NULL){
+    fprintf(stderr, "  -> Error: file %s does not exist\n", argv[1]);
+    exit(-1);
+}
+
+// Parse input dims and allocate memory consquently
+int input_dim;
+fscanf(inputfile, "%d", &input_dim);
+
+fp32 * input;
+input = malloc(input_dim * INPUT_SIZE * sizeof(fp32));
+
+// Read input
+for(int i = 0; i < INPUT_SIZE * input_dim; i++){
+    fscanf(inputfile, "%f,", &input[i].val);
+}
+
+// Finish reading input so let's close it
+fclose(inputfile);
+\end{lstlisting}
+
+    \item Para realizar la multiplicación de matrices, y siguiendo con este ejemplo, se emplea la función \texttt{cblas\_sgemm} para la mutiplicación. El resultado se guarda de forma aditiva sobre \texttt{C}, por lo que es necesario que dicha matriz esté a cero.\medskip
+\begin{lstlisting}[language=C]
+fprintf(stderr, "*** SGEMM %s x %s ***\n", "layer0", "layer1");
+cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, input_dim,
+            LAYER1_SIZE, LAYER0_SIZE, 1.f, (float *) layer0_out,
+            LAYER0_SIZE, (float *) layer1_weights, LAYER1_SIZE,
+            1.f, (float *) layer1_out, LAYER1_SIZE);
+\end{lstlisting}
+
+    Tras la multiplicación de \texttt{A} por \texttt{B}, aditiva sobre \texttt{C}, se han de aplicar los \textit{bias} y la función de transferencia. Si bien podría haberse sumado sobre los \textit{bias} en la función previa, es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia. Esto es así ya que, especialmente si la función se paraleliza, probablemente \texttt{map\_and\_bias} sea \textit{memory-bound}, y un poco de computación extra no vaya a marcar la diferencia. Por el contrario, si se realizara operación sobre una matriz pre inicializada, se necesitaría replicar los valores del \textit{bias} \texttt{input\_dim} veces, lo cual también es \textit{memory-bound}.
+\begin{lstlisting}[language=C]
+fprintf(stderr, "*** Map and Bias %s with %s function ***\n", "layer1_out", "sigmoid__fp32");
+map_and_bias__fp32(layer1_out, layer1_bias, input_dim, LAYER1_SIZE, 'N', sigmoid__fp32);
+\end{lstlisting}
+
+    La implementación inicial de \texttt{map\_and\_bias} es similar a la siguiente:
+\begin{lstlisting}[language=C]
+void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint32_t M, const uint32_t N, fp32 (* map_function)(fp32 x)){
+    for (uint32_t i = 0; i < M; i++){
+        for(uint32_t j = 0; j < N; j++){
+            A[i*N+j].val = map_function((fp32)(A[i*N+j].val +
+                                        bias[j].val)).val;
+        }
+    }
+}
+\end{lstlisting}
+
+    \item Tras repetir el paso anterior tantas veces como capas tenga la arquitectura, los resultados se pueden encontrar en la matriz \texttt{layerN\_out}, siendo \texttt{N} el número de capas. Estos datos pueden ser exportados, mostrados, contados, etc. Como en este caso interesa perfilar y visualizar las características del \texttt{workload}, lo más lógico es primero probar con una cantidad de reducida de datos para verificar el correcto funcionamiento del código generado.
+    
+    Tras verificar el correcto funcionamiento, a pesar de que no sería necesario nada más, se añade un pequeño resumen, que clasifica el número de predicciones. Esto es realmente útil para comparar con la cifra que arroja \acrshort{tf}.
+\end{enumerate}
+
+
+\subsection{Matrices dispersas}
+\label{ssec_gdin_matrices_dispersas}
+Una vez comprendido cómo se procede con matrices de pesos densas, y apoyado por la Sección \ref{sec:redes_reuronales_dispersas} de los \nameref{chap:conceptos_basicos}, los pasos a mayores que se deben realizar son:
+
+\begin{enumerate}
+    \item Transponer la entrada y salida.
+    \item Ajustar los parámetros de las funciones densas.
+    \item Sustituir las matrices de pesos dispersas por densas.
+    \item Sustituir las funciones densas por sus equivalentes dispersas.
+\end{enumerate}
+
+Para realizar estos pasos primero se necesita una librería de \acrshort{blas} que soporte matrices dispersas, y exponga una cabecera para C. A ser posible, y como en cualquier proyecto, es conveniente que dicha dependencia sea moderadamente conocida, dado que eso asegurará una mayor calidad del código interno, así como un mejor soporte. Cumpliendo estos requerimientos, se ha optado por la utilización de \texttt{librsb}\footnote{Página principal \url{http://librsb.sourceforge.net}, con paquete en el AUR (ArchLinux User Repository) \url{https://aur.archlinux.org/packages/librsb}, así como parquete mantenido en Ubuntu \url{https://packages.ubuntu.com/jammy/librsb-dev}}, de la cual se emplea su \textit{Sparse BLAS interface}.
+
+De esta forma, los pasos para adaptar el código para trabajar con matrices dispersas en los pesos son:
+
+\begin{enumerate}
+    \item Para transponer las matrices de entrada y de salida se emplea una función \textit{built-in} de OpenBLAS, por lo que en este aspecto el código está ligado al dicha librería. De todos modos, no parece una dependencia muy complicada de sobrellevar, puesto que esta implementación es muy habitual en la industria.\medskip
+\begin{lstlisting}[language=C]
+fprintf(stderr, "*** Transposing input out-of-place ***\n");
+cblas_somatcopy(CblasRowMajor, CblasTrans, input_dim, LAYER0_SIZE, 1.f, (float *) input, LAYER0_SIZE, (float *) temp_input, input_dim);
+\end{lstlisting}
+
+    Este procedimiento, que se realiza \textit{out-of-place} por la mejoría en rendimiento que supone al transponer matrices no cuadradas, cuenta con un procedimiento previo y posterior con punteros en el que no es necesario profundizar, pero si que se ha omitido un pequeño detalle en el anterior campo de código. Y es que debido a la forma en la que C almacena las matrices en memoria, cuando la matriz es un vector ``vertical'' (una matriz con varias filas y una sola columna), en memoria dicho vector se representa de igual manera que si el vector es ``horizontal'' (una matriz con una sola fila y varias columnas). Por esta razón, y debido a que los tamaños de cada capa se conocen en tiempo de compilación, es posible ahorrar un pequeño tiempo y espacio de código al añadir un simple macro de preprocesador. A continuación se muestra el bloque que realiza la transposición de la capa de salida de forma transparente al resto del programa:\medskip
+\begin{lstlisting}[language=C]
+#if LAYER3_SIZE != 1
+fp32 * temp_output = malloc(input_dim * LAYER3_SIZE * sizeof(fp32));
+fprintf(stderr, "*** Transposing output out-of-place ***\n");
+cblas_somatcopy(CblasRowMajor, CblasTrans, LAYER3_SIZE, input_dim, 1.f, (float *) layer3_out, input_dim, (float *) temp_output, LAYER3_SIZE);
+free(layer3_out);
+layer3_out = temp_output;
+temp_output = NULL;
+#endif
+\end{lstlisting}
+
+    \item En cuanto a ``ajustar los parámetros de las funciones densas'', este es un paso intermedo que no se aprecia en la versión final. En este paso se comprueba que el resultado no varía al realizar la transformación necesaria para funcionar con las funciones \textit{sparse} de \acrshort{blas}. Fuera de los cambios en los parámetros, se hace necesario un cambio en la función \texttt{map\_and\_bias}, que ahora debe aplicar los \textit{bias} en un \textit{layout} de memoria diferente. Para esto se añade un parámetro \texttt{transA}, quedando la modificación en:\medskip
+\begin{lstlisting}[language=C]
+void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint32_t M, const uint32_t N, const char transA, fp32 (* map_function)(fp32 x)){
+    switch (transA){
+    case 'N':
+    case 'n':
+        // [...] algoritmo inicial
+        break;
+
+    case 'T':
+    case 't':
+        for (uint32_t i = 0; i < M; i++){
+            for(uint32_t j = 0; j < N; j++){
+                A[i*N+j].val = map_function((fp32)(A[i*N+j].val 
+                                            + bias[i].val)).val;
+            }                                 // ^^^^^
+        }                    // aquí se cambia el orden de acceso a bias
+        break;
+    }
+}
+\end{lstlisting}
+
+    \item El siguiente paso es sustituir las matrices densas por matrices dispersas. Para esto se emplea el mismo método descrito anteriormente de \textit{hardcodeo} de datos en la Subsección \ref{ssec:importacion_matrices_dispersas}. De esta forma, la previamente mencionada \texttt{layer1\_weights} se divide en el vector de valores y los vectores de coordenadas.
+    
+    Estos datos son necesarios para la creación de las matrices dispersas, indicando \texttt{layerN\_i} y \texttt{layerN\_j} la fila y la columna de cada valor en el array de pesos, respectivamente. Además, se emplea el número de \textit{nonzeroes} para no sólo la creación de la matriz en la función, sino además como comprobación extra en tiempo de compilación. De esta forma, las matrices dispersas se crean de la siguiente manera:
+\begin{lstlisting}[language=C]
+blas_sparse_matrix layer1_sp_weights = blas_invalid_handle;
+/* [...] */
+
+layer1_sp_weights = BLAS_suscr_begin(LAYER0_SIZE, LAYER1_SIZE);
+BLAS_suscr_insert_entries(layer1_sp_weights, layer1_nz, (float *)
+                          layer1_weights, layer1_i, layer1_j);
+BLAS_suscr_end(layer1_sp_weights);
+\end{lstlisting}
+
+    \item Finalmente queda emplear las funciones adecuadas para la mutiplicaciones de matrices $d \times D$. Este proceso consiste básicamente en sustituir la función \texttt{gemm} por una función \texttt{usmm}, así como indicar a \texttt{map\_and\_bias} que la matriz de resultados se encuentra transpuesta. Los valores de $M$ y $N$ (siendo la matriz \texttt{C} de dimensiones $M\times N$) también deben intercambiarse.
+\begin{lstlisting}[language=C]
+fprintf(stderr, "*** SUSMM %s(T) x %s(T) ***\n", "layer3", "layer2");
+BLAS_susmm(blas_rowmajor, blas_trans, input_dim, 1.f, layer3_sp_weights,
+           (float *) layer2_out, input_dim, (float *) layer3_out,
+           input_dim);
+fprintf(stderr, "*** Map and Bias %s(T) with %s function ***\n",
+                "layer3_out", "sigmoid__fp32");
+map_and_bias__fp32(layer3_out, layer3_bias, LAYER3_SIZE, input_dim,
+                   'T', sigmoid__fp32);
+\end{lstlisting}
+\end{enumerate}
