@@ -483,3 +483,41 @@ map_and_bias__fp32(layer3_out, layer3_bias, LAYER3_SIZE, input_dim,
                    'T', sigmoid__fp32);
 \end{lstlisting}
 \end{enumerate}
+
+\section{Posibilidades de esta aproximación}
+\label{sec:posibilidades_esta_aproximacion}
+Las posibilidades de esta aproximación son muchas. Generar código C a partir de un modelo que precisa de soporte en Python es algo especialmente útil para sistemas sin dicho soporte. Es cierto que existe TensorFlow Lite (TFLite) para sistemas embebidos, pero la flexibilidad que aporta crear un código C, la posibilidad de paralelizar tanto en memoria compartida como distribuida dicho código, así como la experiencia obtenida en la realización del proyecto son motivos de peso.
+
+En conjunción con todo esto, el hecho de emplear matrices dispersas viene no solamente condicionado por la literatura ya existente, que destaca los beneficios en cuanto a la proporción rendimiento/precisión de redes podadas, sino que viene también motivada por las labores de investigación en cuanto a análisis estático de código y empaquetamiento de operandos para vectorización conducidas en \cite{exploring_simd_instructions_packing_marcos_horro}.
+
+A continuación se mencionan según la subsección algunas de las posibilidades que abre este concepto.
+
+\subsection{En plataformas de cómputo generalistas}
+\label{ssec:posibilidades_en_computo_generalistas}
+En una plataforma de cómputo generalista, el mundo de tanto el entrenamiento como la inferencia está dominado por las \acrshort{gpu} (\textit{\acrlong{gpu}}). Estos dispositivos son muy convenientes para las cargas de trabajo que se manejan en deep learning, y aportan aceleraciones astronómicas sobre su contraparte en CPU. A pesar de que librerías como \texttt{numpy} están altamente optimizadas para su ejecución en multitud de redes, incluyendo las basadas en pura multiplicación de matrices dispersas, es cierto que incorporando la investigación conducida por Marcos Horro en \cite{marta_marcos_horro_9804589}, así como otras posibles mejoras posteriores, es posible que se mejore el rendimiento o consumo energético de una red basada en matrices dispersas.
+
+Por esta razón, a pesar de que a día de hoy es difícil mejorar el rendimiento de una red dispersa sin afectar a su precisión, incorporando estas nuevas técnicas se podría obtener una mayor precisión con igual rendimiento, o un mayor rendimiento a igual precisión. Además, esta inferencia podría realizarse en entornos de memoria compartida o distribuida, únicamente alterando la correspondiente zona generación de código para incorporar los cambios necesarios.
+
+\subsection{En plataformas de cómputo heterogéneas}
+\label{ssec:posibilidades_en_computo_heterogeneas}
+Siguiendo la línea de la Subsección anterior, dichas implementaciones tanto en memoria compartida como distribuida podrían hacer uso de diversos aceleradores. Ante esta posibilidad, aparecen múltiples tipos de aceleradores válidos para este cometido.
+
+\subsubsection{GPU}
+\label{sssec:heterogeneas_gpu}
+Como ya se comenta levemente en la Subsección \ref{ssec:posibilidades_en_computo_generalistas}, las GPUs son piezas de hardware excelentes para la inferencia, por lo que contar con una mayor cantidad de ellas en un entorno escalable de memoria distribuida es algo deseable.
+
+Generar código para estos dispositivos, si bien cuenta con sus detalles, sería posible empleando un \textit{backend} para CUDA u OpenCL y similares.
+
+\subsubsection{FPGA}
+\label{sssec:heterogeneas_fpga}
+Las \acrshort{fpga} o \textit{\acrlong{fpga}} son dispositivos programables a nivel de hardware. Si bien es conveniente no entrar en detalles de implementación, la posibilidad de cambiar las rutas por donde fluyen los datos, así como de interconectar diferentes piezas de hardware como memorias, \acrshort{cpu} y más recursos hardware según sea más conveniente, permite un aprovechamiento sin igual de su arquitectura, mediante por ejemplo la creación de \textit{pipelines}, etc.
+
+Si bien realizar esto no es trivial, sabiendo que es posible reducir las operaciones con matrices dispersas a una secuencia finita de operaciones \textit{hardcodeadas}, no resulta descabellado pensar en la opción de implementar dicho \textit{backend} para \acrshort{fpga} mediante una arquitectura adecuada.
+
+\subsubsection{ASIC}
+\label{sssec:heterogeneas_asic}
+El siguiente paso en el aumento de rendimiento (absoluto o por unidad de energía) es recurrir a circuitos de aplicación específica, \acrshort{asic} (\textit{\acrlong{asic}}). Con este término \acrshort{asic} se engloba no solo a los chips diseñados de cero con una finalidad, sino también a los procesadores de aplicación específica o \acrshort{asip} (\textit{\acrlong{asip}}). Estos circuitos programados en una \acrshort{isa} (\textit{\acrlong{isa}}), o directamente diseñados en un lenguaje de diseño hardware como VHDL o Verilog permiten ese extra de eficiencia necesario en sistemas embebidos o de muy alta replicación y por tanto consumo agregado.
+
+Como se puede imaginar, si bien difícil, no es imposible implementar un backend que exporte modelos \acrlong{tf} a VHDL o Verilog para los \acrshort{asic}, y tampoco debería ser difícil compilar código C para un \acrshort{asip}. Las optimizaciones sin embargo deberían venir de cómo se implementa el producto de matrices y optras operaciones relevantes como la función de transferencia.
+
+Por último, en estos sistemas embebidos podría ser posible emplear otras técnicas de bajo nivel, imposibles de ejecutar en un ordenador convencional debido a la naturaleza de un sistema operativo, tales como permitir cierta tasa de error en los accesos a memoria a cambio de una reducción en el voltaje operativo de la misma \cite{koppula2019eden}.
