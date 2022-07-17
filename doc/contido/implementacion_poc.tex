@@ -1,7 +1,7 @@
-\chapter{Implementación y POC}
-\label{chap:implementacion_poc}
+\chapter{Desarrollo y POC}
+\label{chap:desarrollo_poc}
 
-\lettrine{U}{na} vez identificados los puntos de intervención y posible mejora, se desarrolla una prueba de concepto, a pesar de que es más que probable que esta primera aproximación básica no mejore el muy optimizado proceso que emplea TensorFlow. El objetivo de esta prueba de concepto es más bien el aprendizaje a bajo nivel, perfilado del código y extracción de características del \textit{workload}, así como intentar proponer mejoras sobre la base ahora tangible.
+\lettrine{U}{na} vez identificados los puntos de intervención y posible mejora, así como los trabajos ya realizados la propuesta es desarrollar una prueba de concepto, a pesar de que es más que probable que esta primera aproximación básica no mejore el muy optimizado proceso que emplea TensorFlow. El objetivo de esta prueba de concepto es más bien el aprendizaje a bajo nivel, perfilado del código y extracción de características del \textit{workload}, así como intentar proponer mejoras sobre la base ahora tangible. Se ha decidido realizar esto y no una simple medida de rendimiento de redes ya existentes debido a que aquellos son valores medidos infinidad de veces.
 
 Para esta \textit{\acrlong{poc}} se ha creado un \textit{Jupyter Notebook} en el cual se puede ir ejecutando paso a paso cada etapa en la generación y entrenamiento de la red. 
 
@@ -520,4 +520,4 @@ El siguiente paso en el aumento de rendimiento (absoluto o por unidad de energí
 
 Como se puede imaginar, si bien difícil, no es imposible implementar un backend que exporte modelos \acrlong{tf} a VHDL o Verilog para los \acrshort{asic}, y tampoco debería ser difícil compilar código C para un \acrshort{asip}. Las optimizaciones sin embargo deberían venir de cómo se implementa el producto de matrices y optras operaciones relevantes como la función de transferencia.
 
-Por último, en estos sistemas embebidos podría ser posible emplear otras técnicas de bajo nivel, imposibles de ejecutar en un ordenador convencional debido a la naturaleza de un sistema operativo, tales como permitir cierta tasa de error en los accesos a memoria a cambio de una reducción en el voltaje operativo de la misma \cite{koppula2019eden}.
+Por último, en estos sistemas embebidos podría ser posible emplear otras técnicas de bajo nivel, imposibles de ejecutar en un ordenador convencional debido a la naturaleza de un sistema operativo, tales como permitir cierta tasa de error en los accesos a memoria a cambio de una reducción en el voltaje operativo de la misma (Sección \ref{ssec:otras_optimizaciones}).
