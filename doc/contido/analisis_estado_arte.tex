@@ -32,4 +32,57 @@ Añadiendo a esto que se pretende que en el futuro prácticamente cualquier bien
 
 \section{Investigación y optimizaciones propuestas}
 \label{sec:investigacion_optimizaciones_propuestas}
-AUUUAUAUAUAU
+Como ya se comenta en la Sección \ref{sec:redes_neuronales}, la multiplicación de matrices es parte fundamental e imprescindible de la ejecución de redes neuronales no-convolucionales. Esto se puede visualizar mejor en la Figura \ref{fig:profiling_several_nns}, donde se muestra en qué cargas de trabajo se invierten más ciclos en varias redes neuronales de referencia \cite[Figure 3.4]{deep_learning_for_computer_architects}. Como es de esperar, en las redes que no requieren de convolución para su funcionamiento, el porcentaje del tiempo que se dedica a la multiplicación de matrices es muy elevada, por lo que atacar dicho punto parece la decisión correcta. Sin embargo, como ingeniero informático, la optimización del algoritmo de multiplicación de matrices generales no parece un campo poco trabajado y abordable para una persona que no haya estudiado matemáticas.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{pdf_tex/dlfca_figure3_4.pdf}
+    \caption{Tiempo empleado en funciones según red neuronal}
+    \label{fig:profiling_several_nns}
+\end{figure}
+
+Tras la multiplicación de matrices, las cargas de trabajo más habituales siguen estando relacionadas con el tamaño del modelo, siendo estas operaciones \textit{elementwise}, es decir, que afectan a elementos individualmente, como la multiplcación, suma o división. Por último otra gran carga de trabajo, y gran fuente de gasto de energía es el movimiento de datos en memoria.
+
+Solventar estos problemas no es tarea trivial. Ignorando la Ley de Moore, mediante la cual los microchips tienden a ser cada vez más eficientes energéticamente, una reducción en el tamaño de las redes, si bien haría que estas ocupasen mucho menos espacio y por tanto consumiesen mucha menos energía, no es una solución asumible. Sin embargo, que las redes no se puedan reducir en tamaño manteniendo el mismo esquema de conexiones denso no implica que no se pueda conservar el tamaño de la red, alterando el esquema de conexiones. Es aquí donde las redes neuronales dispersas comienzan a destacar.
+
+\subsection{Podado y redes dispersas}
+\label{ssec:podado_y_redes_dispersas}
+Mediante el proceso de podado, una red neuronal puede ver enormemente mejorado su rendimiento a costa de pequeños descensos en la precisión hasta cierto umbral. Encontrar este \textit{sweet-spot} es crucial si se desea una implementación competente, pero a la vez lo más eficiente posible. En la Figura \ref{fig:grafica_sparse_vs_dense} \cite{neuralmagic_pruning_overview} se puede apreciar cómo la precisión va progresivamente cayendo a medida que el rendimiento aumenta.
+
+\begin{figure}[h!]
+    \centering
+    \vspace*{0.5cm}
+    \def\svgwidth{0.9\textwidth}
+    \input{pdf_tex/grafica_sparse_vs_dense/grafica_sparse_vs_dense.pdf_tex}
+    \caption{Comparación de rendimiento y precisión con una red neuronal dispersa}
+    \label{fig:grafica_sparse_vs_dense}
+\end{figure}
+
+Como se puede apreciar, en el correcto podado de redes neuronales se puede encontrar una posible solución a la elevada potencia de cómputo necesaria para la ejecución de las mismas. Sin embargo el podado solamente ofrece resultados extraordinarios con precisiones extraordinariamente bajas. Este comportamiento se debe complementar.
+
+\subsection{XPU: \textit{X Processing Unit}}
+\label{ssec:xpu}
+Otra posible vía de mejora de esta eficiencia es mediante la creación de circuitos de aplicación específica para inferencia, un camino muchísimo más barato de señalar que de realizar.
+
+Los circuitos de aplicación específica o \acrshort{asic} (\textit{\acrlong{asic}}) por sus siglas en inglés son probablemente lo más alto que se puede llegar en cuanto a eficiencia de cómputo de un \textit{workload}, así como en gastos derivados de su desarrollo. Estos costes se sitúan en los (miles de) millones de euros, y el proceso de diseño es especializado, costoso, y muy punitivo si se descubren errores graves en el diseño. Es por esto que diseñar un \acrshort{asic} para inferencia es un proceso al alcance de muy pocos.
+
+
+Sin embargo esto no ha frenado a los grandes en el universo de la \acrshort{ia} en su afán por más rendimiento y flexibilidad. Circuitos como las \acrshort{tpu} (\textit{\acrlong{tpu}}) de Google son ya una realidad. En la Figura \ref{fig:tpu_block_diagram} \cite{jouppi2017_in_datacenter_tpu} se puede ver el diagrama de bloques del chip TPU de Google. En esta imagen sepuede ver cómo un componente principal de dicho chip es el multiplicador de matrices. Este componente (entre otros) hace que el \acrshort{tpu} tenga un rendimiento y eficiencia muy superiores a sus contrapartes \acrshort{cpu} y \acrshort{gpu}, como se puede observar en la Figura \ref{fig:tpu_benchmarks} \cite{devopedia_tpu}. 
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.85\textwidth]{img/tpu_block_diagram.jpg}
+    \caption{Diagrama de bloques del chip TPU de Google}
+    \label{fig:tpu_block_diagram}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.85\textwidth]{img/tpu_benchmarks.png}
+    \caption{Resultados del chip TPU de Google en comparativa con otras alternativas}
+    \label{fig:tpu_benchmarks}
+\end{figure}
+
+\subsection{Otras optimizaciones}
+\label{ssec:otras_optimizaciones}
+También se discuten otras optimizaciones como el uso de DRAM aproximada..... TODO
