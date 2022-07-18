@@ -1,9 +1,11 @@
 \chapter{Desarrollo y POC}
 \label{chap:desarrollo_poc}
 
-\lettrine{U}{na} vez identificados los puntos de intervención y posible mejora, así como los trabajos ya realizados la propuesta es desarrollar una prueba de concepto, a pesar de que es más que probable que esta primera aproximación básica no mejore el muy optimizado proceso que emplea TensorFlow. El objetivo de esta prueba de concepto es más bien el aprendizaje a bajo nivel, perfilado del código y extracción de características del \textit{workload}, así como intentar proponer mejoras sobre la base ahora tangible. Se ha decidido realizar esto y no una simple medida de rendimiento de redes ya existentes debido a que aquellos son valores medidos infinidad de veces.
+\lettrine{U}{na} vez identificados los puntos de intervención y posible mejora, así como los trabajos ya realizados la propuesta es desarrollar una prueba de concepto, a pesar de que es más que probable que esta primera aproximación básica no mejore los optimizados procesos que utilizan las librerías más empleadas en este campo.
 
-Para esta \textit{\acrlong{poc}} se ha creado un \textit{Jupyter Notebook} en el cual se puede ir ejecutando paso a paso cada etapa en la generación y entrenamiento de la red. 
+El objetivo de esta \textit{\acrlong{poc}} es implementar una red neuronal para la posterior medida de su rendimiento y perfilado. Sin embargo, dado que uno de los \textit{frameworks} predominantes en la industria es \acrlong{tf}, y con el objetivo de investigar acerca de la implementación a bajo nivel de esta librería, así como para contrastar la corrección de la implementación, se ha decidido generar dichas redes a partir de un modelo ya entrenado. Para cumplir este objetivo se ha creado un \textit{Jupyter Notebook} en el cual se puede ir ejecutando paso a paso cada etapa en la generación y entrenamiento de la red, así como opcionalmente crear una variante podada del modelo, para finalmente generar código C. Los pasos para la ejecución del programa, así como los conocimientos necesarios para comprender las necesidades del mismo se describen a continuación.
+
+A pesar de que el objetivo de perfilado de un código \textit{machine learning} y extracción sus características no precisa de ningún tipo de generación dinámica de código, se ha decidido realizar esto y no una simple medida de rendimiento en el propio \acrlong{tf} por mejorar los conocimientos y comprensión de estas redes a bajo nivel, a pesar de que esto pueda mermar la cantidad de arquitecturas de red diferentes que se pueden medir.
 
 \section{Extracción de valores para modelos TensorFlow}
 \label{sec:extraccion_valores_modelo_tf}
