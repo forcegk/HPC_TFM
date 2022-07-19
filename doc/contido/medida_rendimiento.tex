@@ -3,4 +3,49 @@
 
 \lettrine{T}{ras} plantear la problemática y construir la prueba de concepto, en este capítulo se muestran los resultados de las medidas de rendimiento tanto para los códigos densos como dispersos. Estos resultados se comparan con los que se pueden ver en la literatura ya existente, para comprobar si la red implementada se adhiere a los patrones indicados por ejemplo en la Sección \ref{sec:investigacion_optimizaciones_propuestas}.
 
-TODO PROFILING AND ROOFLINE. Mañana debería tenerlo listo y pasado maquetado. Las conclusiones e introducción para el siguiente día, y el resto de días espero que sean más tranquilos.
+\section{Medida del rendimiento}
+\label{sec:medida_del_rendimiento}
+La medida del rendimiento de las pruebas de concepto no es tarea trivial. Al ser una simple \textit{\acrlong{poc}} la función \texttt{map\_and\_bias} no está debidamente optimizada con OpenMP. Realizar esta optimización no es difícil, pero quizás sería innecesario cuando lo que se pretende es medir las posibilidades de una aproximación, y no optimizar y trabajar a fondo en ella.
+
+Por esta razón se ha decidido simplemente implementar de forma sencilla la generación de código con las librerías OpenBLAS y librsb, sin añadir OpenMP u optimizaciones mayores en funciones auxiliares. El \textit{overhead} que añade el tratamiento auxiliar de datos es lo suficientemente bajo como para no necesitar paralelización en un entorno de pruebas.
+
+\subsection{Metodología}
+\label{ssec:metodologia}
+Para la medida del rendimiento se generan dos redes neuronales de un tamaño absurdamente grande para el problema que se pretende resolver, tal como se puede observar en el fichero \texttt{generator.ipynb}. Estas redes son completamente inútiles, puesto que debido a su enorme tamaño lo único que aprenden durante el proceso de entrenamiento es a marcar como positivos todos los \textit{inputs}.
+
+Esto, que para un ingeniero en inteligencia artificial sería un enorme fracaso, en este ámbito es algo completamente indiferente, ya que a pesar de la inutilidad de la red creada, esta sigue realizando las cargas de trabajo típicas de una red neuronal adecuada, esto es, multiplica matrices, suma los \textit{bias} y aplica funciones de transferencia.
+
+Para la medida del rendimiento se emplea el programa Intel Advisor, el cual permite realizar modelos \textit{roofline} de programas completos, así como de las funciones de su librería \acrshort{mkl} (\textit{\acrlong{mkl}}). Esto es especialmente útil para perfilar la implementación densa, que emplea funciones de \texttt{cblas} ampliamente utilizadas.
+
+Sin embargo, esta universalidad se pierde con la versión dispersa (\textit{sparse}), ya que se emplean funciones \textit{built-in} de OpenBLAS, así como funciones propias de librsb, lo que hace que cambiar a la \acrshort{mkl} requiera una reprogramación de ciertas líneas del código para poder perfilar las funciones de librería con Intel Advisor. Esto, que inicialmente puede parecer un problema, no lo es tanto si se razona con respecto al \textit{roofline} de la versión densa.
+
+\subsection{Compilación}
+\label{ssec:compilacion_medida}
+Para compilar las versiones densa y dispersa se requiere intercambiar OpenBLAS por la Intel \acrshort{mkl}, así como desactivar el \textit{stripping} del binario (opción \texttt{-s}) para activar los símbolos de depuración (opción \texttt{-g}). Esto implica modificar las líneas de compilación genéricas que se pueden encontrar en el fichero \texttt{.ipynb}, tal como se muestra a continuación.
+
+\subsubsection{Código denso}
+Para la obtención del \textit{roofline model} de la carga de trabajo, es necesario o bien calcularlo manualmente, o bien emplear alguna herramienta adecuada para ello. Como ya se comenta previamente, se emplea Intel Advisor para el perfilado del código, por lo que es necesario compilar el código denso con una configuración que sustituya OpenBLAS por \acrshort{mkl}. Para esto se puede compilar de las siguientes formas:
+
+\begin{lstlisting}[language=bash]
+# Para una compilación convencional sin depuración con OpenBLAS, sería necesario únicamente ejecutar
+gcc -march=native -O3 -s *.c -o dense.out -lm -lcblas       # En Arch Linux
+gcc -march=native -O3 -s *.c -o dense.out -lm -lopenblas    # En Ubuntu
+
+# Sin embargo, con propósitos de perfilado con Intel Advisor, en un entorno bash donde se haya realizado `source /opt/intel/oneapi/setvar.sh` se ha de compilar con:
+gcc -march=native -O3 -g3 -DMKL_ILP64 -m64 -I"${MKLROOT}/include" *.c -o dense.out -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+\end{lstlisting}
+
+\subsubsection{Código \textit{sparse}}
+En este caso, debido al uso de \texttt{librsb} como librería de Sparse BLAS, la herramienta de perfilado y análisis de código Intel Advisor, a pesar de recompilar la librería con \textit{flags} de \textit{debug}, no es capaz de analizar el código de librería. Una adaptación a la librería Intel MKL, a pesar de no ser imposible, no es conveniente. Por esto mismo más adelante en este capítulo se estima el rendimiento y posibilidades de mejora del código disperso, en función a los resultados con respecto al denso.
+
+Para compilar el código para \textit{release}, las líneas de compilación son las siguientes:
+
+\begin{lstlisting}[language=bash]
+# Para una compilación convencional sin depuración con OpenBLAS, sería necesario únicamente ejecutar
+gcc -march=native -O3 -s *.c -o sparse.out -lm -lrsb -lcblas # En Arch Linux
+gcc -march=native -O3 -s *.c -o sparse.out -lm -lrsb -lopenblas  # En Ubuntu
+\end{lstlisting}
+
+\section{Perfilado y \textit{roofline model}}
+\label{sec:perfilado_roofline}
+a
