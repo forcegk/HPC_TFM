@@ -24,7 +24,7 @@ Para la medida del rendimiento se emplea el programa \texttt{hyperfine}\footnote
 hyperfine --warmup 3 --runs 15 './dense.out input.txt'
 \end{lstlisting}
 
-Tanto las ejecuciones de medición de tiempos como los perfilados se realizan en un equipo Xiaomi Mi Notebook 15 con las siguientes características:
+Tanto las ejecuciones de medición de tiempos como los perfilados se realizan en un equipo Xiaomi Mi Notebook 15 con las características visibles en la Tabla \ref{tb:especificaciones_xiaomi}.
 \begin{table}
 \centering
 \begin{tabular}{|c|c|}
@@ -37,9 +37,7 @@ Tanto las ejecuciones de medición de tiempos como los perfilados se realizan en
     librsb & librsb-dev focal, v1.2.0.8\\\hline
     oneapi & Intel oneAPI 2022\\\hline
 \end{tabular}
-
-\label{tab:especificaciones_xiaomi}
-\caption{Especificaciones técnicas del equipo de pruebas}
+\caption{\label{tb:especificaciones_xiaomi}Especificaciones técnicas del equipo de pruebas}
 \end{table}
 
 
@@ -114,7 +112,7 @@ Tiempo $(\overline{t} \pm \sigma)$ = 13,862 s $\pm$ 0,710 s
 Rangos (min \ldots\ max) = 12,635 s \ldots\ 15,285 s
 \end{center}
 
-En este caso, debido al empleo de la librería librsb, el modelo \textit{roofline} no contiene información de utilidad (Figura \ref{fig:roofline_sparse_details}). TODO
+En este caso, debido al empleo de la librería librsb, el modelo \textit{roofline} no contiene información de utilidad (Figura \ref{fig:roofline_sparse_details}). Esto, que a todas luces es un problema, deja de serlo si se realiza un sencillo razonamiento.
 
 \begin{figure}[h!]
     \centering
@@ -122,3 +120,53 @@ En este caso, debido al empleo de la librería librsb, el modelo \textit{rooflin
     \caption{\textit{Roofline model} del código disperso}
     \label{fig:roofline_sparse_details}
 \end{figure}
+
+Teniendo en cuenta que los tiempos de ejecución de una red dispersa al 95\% son \textasciitilde25\% superiores a los de la red completamente conexa, aún teniendo que procesar un 95\% menos de datos, se puede realizar una estimación del número teórico de FLOP necesarios para las operaciones de multiplicación.
+
+\subsubsection{Aproximación teórica}
+Sean dos matrices $d \times D$, de dimensiones $m \times n$ y $n \times k$ y la matriz dispersa con una densidad del 50\%, siendo $\#nz$ el número de valores no-cero en la misma:
+
+\begin{gather}
+    \begin{pmatrix}
+        0 & d_{12}\\
+        d_{21} & 0\\
+        0 & d_{32}
+    \end{pmatrix}	
+    \begin{pmatrix}
+        D_{11} & \dots\\
+        D_{21} & \dots
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+        C_{11} & \dots\\
+        C_{21} & \dots\\
+        C_{31} & \dots
+    \end{pmatrix}
+    \label{eq:flops_sparsity_eq}
+\end{gather}
+
+Comenzando con $C$ en una región de memoria a ceros, la secuencia de operaciones a realizar sería la siguiente para este ejemplo:
+
+\begin{center}
+    $C_{11} \pluseq d_{12} \cdot D_{21}$\\
+    $C_{21} \pluseq d_{21} \cdot D_{11}$\\
+    $C_{31} \pluseq d_{32} \cdot D_{21}$\\
+\end{center}
+
+Esta secuencia \textit{hardcodeada} se repetirá $k$ veces, (el número columnas de $D$ y $C$). Teniendo en cuenta que una operación \texttt{FMA} realiza dos FLOP, se puede concluir que el número de FLOP necesarios para el cálculo de la matriz resultado $C$ será $2 \cdot \#nz \cdot k$.
+
+\subsubsection{Estimación del rendimiento}
+Teniendo en cuenta que las matrices dispersas de pesos en el código disperso tienen una densidad del 5\% (o lo que es lo mismo, una \textit{sparsity} del 95\%), desde un punto de vista teórico se puede concluír que se deberían realizar un 95\% menos de operaciones en punto flotante.
+
+Sin embargo esta reducción en el número de operaciones necesarias, debido a múltiples factores como el principio de localidad, estructura interna a la hora de almacenar la matriz, estructuras de control, así como optimizaciones internas de la propia librería, no se corresponde con una disminución del tiempo de ejecución, sino más bien todo lo contrario. Esta reducción en el número de FLOPS no lo es sin embargo en intensidad aritmética, puesto que también se cuenta con menor número de bytes de datos, resultando en un hipotético descenso en el eje $y$ en el modelo.
+
+Por esta razón, el modelo \textit{roofline} resultante, que el programa Intel Advisor es incapaz de generar, se vería similar a lo que se puede observar en la Figura \ref{fig:roofline_sparse_estimado}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{img/roofline_sparse_estimado.png}
+    \caption{Estimación del \textit{roofline model} del código disperso}
+    \label{fig:roofline_sparse_estimado}
+\end{figure}
+
+Estos decepcionantes resultados, sin embargo, no son tan desalentadores, ya que implica que existe un amplio margen de mejora mediante análisis estático de código y generación de instrucciones FMA y de control \textit{ad-hoc}, que incluso pueden ser vectorizadas mediante el empleo de la herramienta MARTA\footnote{\url{https://github.com/UDC-GAC/MARTA}}.
