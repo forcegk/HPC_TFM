@@ -1,17 +1,17 @@
 \chapter{Análisis y estado del arte}
 \label{chap:analisis_estado_arte}
 
-\lettrine{C}{omo} ya se comenta en la introducción, la inteligencia artificial está de moda tanto en el mundo académico como, cada vez más, en el \textit{mainstream}.
+\lettrine{C}{omo} ya se comentó en la introducción, la inteligencia artificial está en auge tanto en el mundo académico como, cada vez más, en el \textit{mainstream}. Fruto de 
 
-Fruto de esta fiebre por la \acrshort{ia}, compañías como OpenAI, Google, Meta o incluso Tesla realizan amplias inversiones en el campo, para todos los años sorprender con modelos innovadores, rompiendo la barrera de lo que se creía posible hasta el momento.
+TODO RELOCATE
 
 \section{Últimos avances y tecnologías}
 \label{sec:ultimos_avances_tecnologias}
-Los últimos avances en esta disciplina vienen principalmente determinados por una palabra concreta: \textit{transformer}. Y es que este tipo de redes neuronales, capaces de mantener cierto nivel de atención \cite{vaswani2017attention_all_you_need} durante su funcionamiento, han sido las causantes de este \textit{boom}.
+Los últimos avances en \acrshort{ia} vienen principalmente determinados por una palabra concreta: \textit{transformer}. Y es que este tipo de redes neuronales, capaces de mantener cierto nivel de atención \cite{vaswani2017attention_all_you_need} durante su funcionamiento, han sido las causantes de una fiebre en la que compañías como OpenAI, Google, Meta o incluso Tesla se han lanzado a realizan amplias inversiones en el campo. Dichas compañías y multitud de investigadores sorprenden todos los años con modelos innovadores, rompiendo la barrera de lo que se creía posible hasta el momento.
 
-Algunas de las arquitecturas basadas en \textit{transformers} más relevantes son AlphaFold para el plegado de protenínas, Tesla Autopilot para conducción autónoma en vehículos de dicha marca, GPT-3 para la generación de texto, o la red generalista GATO, entre otros.
+Algunas de las arquitecturas basadas en \textit{transformers} más relevantes son AlphaFold para el plegado de proteínas, Tesla Autopilot para conducción autónoma, GPT-3 para la generación de texto, o la red generalista GATO, entre otros.
 
-Estos transformers además, pueden aplicarse a arquitecturas ya existentes como las \textit{GAN}s\footnote{\url{https://en.wikipedia.org/wiki/Generative\_adversarial\_network}} para obtener resultados visiblemente espectaculares, como se puede observar en la Figura \ref{fig:vqgan_image}, o en \cite{chang2022maskgit}, donde se emplean transformers y \textit{VQGAN}s para realizar todo tipo de manipulaciones sobre imágenes.
+Estos transformers, además, pueden aplicarse a arquitecturas ya existentes como las \textit{\acrshort{gan}}s (\textit{\acrlong{gan}})\footnote{\url{https://en.wikipedia.org/wiki/Generative\_adversarial\_network}} para obtener resultados visiblemente espectaculares, como se puede observar en la Figura \ref{fig:vqgan_image}, o en el proyecto \cite{chang2022maskgit}, donde se emplean transformers y \textit{VQGAN}s para realizar todo tipo de manipulaciones sobre imágenes.
 
 \begin{figure}[h!]
     \centering
@@ -22,9 +22,9 @@ Estos transformers además, pueden aplicarse a arquitecturas ya existentes como 
 
 \section{Requerimientos energéticos de las redes neuronales}
 \label{sec:requerimientos_energeticos_redes_neuronales}
-Estas a cada año más increíbles capacidades de las redes neuronales artificiales no vienen sin coste. El coste de personal de investigación y desarrollo, así como el coste energético del proceso de entrenamiento siguen siendo exageradamente altos para proyectos complejos como los citados en la Sección \ref{sec:ultimos_avances_tecnologias}.
+Las cada vez más increíbles capacidades de las redes neuronales artificiales no vienen sin coste. El coste de personal de investigación y desarrollo, así como el coste energético del proceso de entrenamiento siguen siendo exageradamente altos para proyectos complejos como los citados en la sección anterior.
 
-Sin embargo en este trabajo no se trata el proceso de desarrollo y entrenamiento, ya que eso queda delegado en los muchos y muy competentes ingenieros en inteligencia artificial. En este trabajo se trata el proceso de inferencia, es decir, la ``ejecución'' de una red creada y entrenada.
+Sin embargo, en este trabajo no se trata el proceso de desarrollo y entrenamiento, ya que eso se delega en los numerosos y muy competentes ingenieros en inteligencia artificial. En este trabajo se trata el proceso de inferencia, es decir, la ``ejecución'' de una red creada y entrenada.
 
 El proceso de inferencia es mucho más sencillo y computacionalmente menos demandante que el de entrenamiento, pero tras esa falsa sensación de ``gratuidad'' de bajos recursos computacionales se oculta una trampa en la escala de dichos recursos. Esto es debido a que, a pesar de que una red neuronal durante el proceso de desarrollo se entrena múltiples veces con un elevado coste asociado, este entrenamiento es habitualmente llevado a cabo por un pequeño grupo de ingenieros. Por otro lado, si bien la ejecución de redes neuronales es mucho más barata computacionalmente hablando, la escala de estas redes neuronales, especialmente de las que aspiran a convertirse en parte de nuestras vidas, hace que un consumo de unos pocos mWh se convierta en varios kWh o incluso MWh por dispositivo a lo largo de todo el planeta.
 
@@ -32,18 +32,18 @@ Añadiendo a esto que se pretende que en el futuro prácticamente cualquier bien
 
 \section{Investigación y optimizaciones propuestas}
 \label{sec:investigacion_optimizaciones_propuestas}
-Como ya se comenta en la Sección \ref{sec:redes_neuronales}, la multiplicación de matrices es parte fundamental e imprescindible de la ejecución de redes neuronales no-convolucionales. Esto se puede visualizar mejor en la Figura \ref{fig:profiling_several_nns}, donde se muestra en qué cargas de trabajo se invierten más ciclos en varias redes neuronales de referencia \cite[Figure 3.4]{deep_learning_for_computer_architects}. Como es de esperar, en las redes que no requieren de convolución para su funcionamiento, el porcentaje del tiempo que se dedica a la multiplicación de matrices es muy elevada, por lo que atacar dicho punto parece la decisión correcta. Sin embargo, como ingeniero informático, la optimización del algoritmo de multiplicación de matrices generales no parece un campo poco trabajado y abordable para una persona que no haya estudiado matemáticas.
+Como ya se comentó en la Sección \ref{sec:redes_neuronales}, la multiplicación de matrices es parte fundamental e imprescindible de la ejecución de redes neuronales no convolucionales. Esto se puede visualizar mejor en la Figura \ref{fig:profiling_several_nns}, donde se muestra en qué cargas de trabajo se invierten más ciclos en varias redes neuronales de referencia \cite[Figura 3.4]{deep_learning_for_computer_architects}. Como es de esperar, en las redes que no requieren de convolución para su funcionamiento, el porcentaje del tiempo que se dedica a la multiplicación de matrices es muy elevada, por lo que atacar dicho punto parece la decisión correcta. Sin embargo, como ingeniero informático, la optimización del algoritmo de multiplicación de matrices generales no parece un campo poco trabajado y abordable para una persona sin formación específica en matemáticas y algoritmia avanzada.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=\textwidth]{pdf_tex/dlfca_figure3_4.pdf}
-    \caption{Tiempo empleado en funciones según red neuronal}
+    \caption{Porcentaje del tiempo empleado en funciones según tipo de red neuronal}
     \label{fig:profiling_several_nns}
 \end{figure}
 
-Tras la multiplicación de matrices, las cargas de trabajo más habituales siguen estando relacionadas con el tamaño del modelo, siendo estas operaciones \textit{elementwise}, es decir, que afectan a elementos individualmente, como la multiplcación, suma o división. Por último otra gran carga de trabajo, y gran fuente de gasto de energía es el movimiento de datos en memoria.
+Tras la multiplicación de matrices, las cargas de trabajo más habituales siguen estando relacionadas con el tamaño del modelo, siendo estas operaciones \textit{elementwise}, es decir, que afectan a elementos individualmente, como la multiplcación, suma o división. Por último, otra gran carga de trabajo, y gran fuente de gasto de energía, es el movimiento de datos en memoria.
 
-Solventar estos problemas no es tarea trivial. Ignorando la Ley de Moore, mediante la cual los microchips tienden a ser cada vez más eficientes energéticamente, una reducción en el tamaño de las redes, si bien haría que estas ocupasen mucho menos espacio y por tanto consumiesen mucha menos energía, no es una solución asumible. Sin embargo, que las redes no se puedan reducir en tamaño manteniendo el mismo esquema de conexiones denso no implica que no se pueda conservar el tamaño de la red, alterando el esquema de conexiones. Es aquí donde las redes neuronales dispersas comienzan a destacar.
+Solventar estos problemas no es tarea trivial. Ignorando la cada vez menos presente Ley de Moore, mediante la cual los microchips tienden a ser cada vez más eficientes energéticamente, una reducción en el tamaño de las redes, si bien haría que estas ocupasen mucho menos espacio y por tanto consumiesen mucha menos energía, no es una solución asumible. Sin embargo, que las redes no se puedan reducir en tamaño manteniendo el mismo esquema de conexiones denso no implica que no se pueda conservar el tamaño de la red, alterando el esquema de conexiones. Es aquí donde las redes neuronales dispersas comienzan a destacar como una opción con menor número de FLOPs, y por tanto con menor consumo teórico de energía.
 
 \subsection{Podado y redes dispersas}
 \label{ssec:podado_y_redes_dispersas}
