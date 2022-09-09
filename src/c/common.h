@@ -44,8 +44,12 @@ fp64 sigmoid__fp64(fp64);
  * @param map_function Function returning an fp32, which will be applied like: A[i][j] = map_function(A[i][j]+bias).
  */
 void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint32_t M, const uint32_t N, const char transA, fp32 (* map_function)(fp32 x));
+void map_and_bias__fp64(fp64 *restrict A, const fp64 *restrict bias, const uint32_t M, const uint32_t N, const char transA, fp64 (* map_function)(fp64 x));
 
 
+/**
+ * @deprecated ONLY FOR TESTING
+ */
 void inefficient_matmul(const unsigned int nrowsA, const unsigned int mcolsA,
             const unsigned int pcolsB, const fp32 arrayA[],
             const fp32 arrayB[], fp32 arrayR[]);
