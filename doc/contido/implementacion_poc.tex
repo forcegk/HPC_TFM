@@ -1,41 +1,49 @@
-\chapter{Desarrollo y POC}
+\chapter{Desarrollo y Prueba de Concepto}
 \label{chap:desarrollo_poc}
 
-\lettrine{U}{na} vez identificados los puntos de intervención y posible mejora, así como los trabajos ya realizados la propuesta es desarrollar una prueba de concepto, a pesar de que es más que probable que esta primera aproximación básica no mejore los optimizados procesos que utilizan las librerías más empleadas en este campo.
+\lettrine{U}{na} vez identificados los puntos de intervención y posible mejora, así como revisados los trabajos ya realizados, en este capítulo se detalle el desarrollo de una prueba de concepto.
 
-El objetivo de esta \textit{\acrlong{poc}} es implementar una red neuronal para la posterior medida de su rendimiento y perfilado. Sin embargo, dado que uno de los \textit{frameworks} predominantes en la industria es \acrlong{tf}, y con el objetivo de investigar acerca de la implementación a bajo nivel de esta librería, así como para contrastar la corrección de la implementación, se ha decidido generar dichas redes a partir de un modelo ya entrenado. Para cumplir este objetivo se ha creado un \textit{Jupyter Notebook} en el cual se puede ir ejecutando paso a paso cada etapa en la generación y entrenamiento de la red, así como opcionalmente crear una variante podada del modelo, para finalmente generar código C. Los pasos para la ejecución del programa, así como los conocimientos necesarios para comprender las necesidades del mismo se describen a continuación.
+% a pesar de que es más que probable que esta primera aproximación básica no mejore los optimizados procesos que utilizan las librerías más empleadas en este campo.
 
-A pesar de que el objetivo de perfilado de un código \textit{machine learning} y extracción sus características no precisa de ningún tipo de generación dinámica de código, se ha decidido realizar esto y no una simple medida de rendimiento en el propio \acrlong{tf} por mejorar los conocimientos y comprensión de estas redes a bajo nivel, a pesar de que esto pueda mermar la cantidad de arquitecturas de red diferentes que se pueden medir.
+\section{Objetivos de la Prueba de Concepto}
+\label{sec:objetivos_poc}
+El objetivo de esta Prueba de Concepto es implementar una red neuronal para la posterior medida de su rendimiento y perfilado. Sin embargo, dado que uno de los \textit{frameworks} predominantes en la industria es \acrlong{tf}, tal como se comenta en la Sección \ref{} \textbf{TODO REF}, se han decidido desarrollar las redes neuronales mediante este \textit{framework}, ahorrando toda la implementación del entrenamiento (que no concierne a este trabajo). Esto permite no solo investigar acerca de la implementación a bajo nivel de esta librería, sino además comparar los resultados que arroja la implementación de la \acrshort{poc} con los de dicha librería, verificando así que el programa sea correcto.
+
+Por último, el uso de \acrlong{tf} también es necesario para el podado de redes neuronales, donde es importante que la forma de las matrices sea algo extrapolable a una red neuronal real.
+
+Para cumplir estos objetivos se crea un \textit{Jupyter Notebook} en el cual se pueden ir ejecutando paso a paso cada etapa en la generación y entrenamiento de la red, así como opcionalmente crear una variante podada del modelo, para finalmente generar código C. Los pasos para la ejecución del programa, así como los conocimientos necesarios para comprender las necesidades del mismo se describen a continuación.
+
+A pesar de que el perfilado de un código \textit{machine learning} y extracción de sus características no precisa de ningún tipo de generación dinámica de código C, se ha decidido realizar esto y no una simple medida de rendimiento en el propio \acrlong{tf} para mejorar los conocimientos y comprensión de estas redes a bajo nivel. Esto, a pesar de que esto pueda mermar la cantidad de arquitecturas de red diferentes que se pueden medir, resulta particularmente útil a la hora de continuar la investigación realizada en redes punto a punto. 
 
 \section{Extracción de valores para modelos TensorFlow}
 \label{sec:extraccion_valores_modelo_tf}
-El primer paso para la implementación de esta \acrshort{poc} es la extracción de los valores desde el modelo TensorFlow. Este modelo puede venir dado previamente en formato \texttt{.pb} o se puede crear y entrenar desde python sin exportarlo en ningún momento.
+El primer paso para la implementación de esta \acrshort{poc} es la extracción de los valores desde el modelo TensorFlow. Este modelo puede venir dado previamente en formato \texttt{.pb} (formato de archivo que emplea \acrlong{tf} en el que viene definida la arquitectura de red, así como los valores de los pesos, \textit{bias}, etc), o se puede crear y entrenar directamente desde Python sin importarlo u exportarlo en ningún momento.
 
-Como los modelos más grandes y complejos no suelen ser modelos exclusivamente \textit{feed-forward} con funciones de activación exclusivamente sigmoides, lo más cómodo es simplemente generar una red neuronal de pruebas, entrenarla, y exportar el resultado a C.
+Como los modelos más grandes y complejos no suelen ser modelos exclusivamente \textit{feed-forward} con funciones de activación exclusivamente sigmoides (\textbf{TODO REF SECCION 2}), lo más cómodo es simplemente generar una red neuronal de pruebas, entrenarla, y exportar el resultado a C.
 
 \subsection{Desde un modelo guardado}
 \label{ssec:desde_modelo_guardado}
-Para realizar esto, que queda fuera del objetivo de este trabajo, bastaría con emplear la función \texttt{saved\_model.load} de TensorFlow, sobre un modelo \texttt{.pb} previamente exportado \cite{tensorflow_saved_model}. Esto permitiría importar grandes modelos preentrenados, y realizar mediciones sobre modelos ``del mundo real'', pero implicaría una gran cantidad de horas de trabajo y adaptación, poco adecuadas para la longitud de este proyecto, debido a la gran cantidad de parámetros, tipos de capas y funciones de activación, entre otros, que no se han implementado.
+Para realizar esto, que queda fuera del objetivo de este trabajo, bastaría con emplear la función \texttt{saved\_model.load} de TensorFlow sobre un modelo \texttt{.pb} previamente exportado \cite{tensorflow_saved_model}. Esto permitiría importar grandes modelos preentrenados y realizar mediciones sobre modelos ``del mundo real'', pero implicaría una gran cantidad de horas de trabajo y adaptación, debido a la gran cantidad de parámetros, tipos de capas y funciones de activación, entre otros, que no se han implementado.
 
 Por esta razón, este proyecto se limita a la extracción para modelos puramente \textit{feed-forward} con función de activación sigmoide (a pesar de que añadir soporte para distintas funciones de activación sería relativamente sencillo de implementar).
 
 \subsection{Desde un modelo de pruebas}
 \label{ssec:desde_modelo_de_pruebas}
-Este es el camino más sencillo a la hora de implementar lo que recordemos es simplemente un laboratorio básico para poder realizar mediciones y sacar conclusiones.
+Este es el camino más sencillo a la hora de implementar lo que, recordemos, es simplemente un laboratorio básico para poder realizar mediciones y extraer conclusiones.
 
 \subsubsection{Fase común}
 \label{sssec:modelo_pruebas_fase_comun}
-A continuación se muestran, por orden de aparición en el \textit{notebook}, los pasos de entrenamiento de la red. De aquí en adelante la palabra \acrlong{tf} aparecerá muy habitualmente, por lo que también será referida como simplemente \acrshort{tf}.
+A continuación se muestran, por orden de aparición en el \textit{notebook}, los pasos de entrenamiento de la red.
 
 \begin{enumerate}
-    \item Se importa el conjunto de datos. En este caso, y tras pedir consejo a usuarios más avanzados de \acrshort{tf}, se ha empleado el \textit{dataset} \texttt{german\_credit\_numeric}, debido a la simplicidad de sus entradas y salidas. Este conjunto de datos cuenta con 1000 entradas en el mismo, y se emplea para intentar parametrizar el riesgo crediticio de un individuo mediante redes neuronales.\medskip
+    \item Se importa el conjunto de datos. En este caso se ha empleado el \textit{dataset} \texttt{german\_credit\_numeric}, debido a la simplicidad de sus entradas y salidas, así como por los numerosos ejemplos disponibles para este. Este conjunto de datos cuenta con 1000 datos de entrada de 24 parámetros numéricos cada uno, y se emplea para intentar parametrizar el riesgo crediticio de un individuo mediante redes neuronales.\medskip
 \begin{lstlisting}[language=Python]
 ds = tfds.load('german_credit_numeric', split='train', as_supervised=True)
 \end{lstlisting}
 
     \item Se indican la función de pérdida, el optimizador y la métrica. Esto, si bien sería un tema muy interesante si este trabajo tratase de obtener buenos resultados con esta red, en este caso es irrelevante que la arquitectura de la red sea buena o no, así como la calidad de su entrenamiento y resultados.
 
-    \item Se crea un modelo secuencial, es decir un modelo ``capa por capa'', en el que cada capa va a continuación de la siguiente. Tras crearlo se \textit{buildea} y se compila.\medskip
+    \item Se crea un modelo secuencial, es decir, un modelo ``capa por capa'', en el que cada capa va a continuación de la siguiente. Tras crearlo se \textit{buildea} (\texttt{model.build()}) y se compila.\medskip
 \begin{lstlisting}[language=Python]
 model = tf.keras.models.Sequential(name= "MySampleModel")
 model.add(tf.keras.layers.InputLayer((tamano_entrada,)))
@@ -58,7 +66,7 @@ history =  model.fit(x=lote_entrenamiento[0], y = lote_entrenamiento[1], batch_s
 \label{sssec:modelo_pruebas_fase_podado}
 En caso de querer podar la red para aumentar su \textit{sparsity}, el procedimiento es muy similar al descrito en \cite{tensorflow_prune_model}. Los pasos para realizar este procedimiento se describen a continuación:
 \begin{enumerate}
-    \item Se crean los parámetros para podar el modelo hasta una \textit{sparsity} en este caso del 80\%. Previamente al podado copia el modelo original a un modelo diferente, \texttt{model\_for\_pruning}.\medskip
+    \item Se crean los parámetros para podar el modelo hasta una \textit{sparsity} en este caso del 80\%. Previo al podado se copia el modelo original a un modelo diferente, \texttt{model\_for\_pruning}.\medskip
 \begin{lstlisting}[language=Python]
 prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
@@ -104,10 +112,10 @@ history.history
 
 \subsection{Extracción de valores}
 \label{ssec:extraccion_valores}
-Ahora que se cuenta con un modelo de red neuronal, de discutible calidad, pero funcionalmente idéntico a otro mejor, con mayor cantidad de neuronas o más capas, se puede comenzar con la extracción de valores de cada capa.
+Ahora que se cuenta con un modelo de red neuronal de discutible calidad, pero funcionalmente idéntico a otro mejor adaptado al problema a resolver, se puede comenzar con la extracción de valores de cada capa.
 
 \begin{enumerate}
-    \item Primero es necesario obtener tanto los pesos como los \textit{bias}. Para esto se itera sobre las capas del modelo. En cada capa del modelo se puede llamar a la función \texttt{get\_weights()}. En el restultado que devuelve, los pesos se encuentran en un array de arrays en la posición 0, y los \textit{bias} un un array en la 1.\medskip
+    \item Primero es necesario obtener tanto los pesos como los \textit{bias}. Para esto se itera sobre las capas del modelo. En cada capa del modelo se puede llamar a la función \texttt{get\_weights()}. En el resultado que devuelve, los pesos se encuentran en un array de arrays en la posición 0, y los \textit{bias} un array en la posición 1.\medskip
 \begin{lstlisting}[language=Python]
 for layer in model.layers:
     print(f"LAYER{idx}_WEIGHTS:")
@@ -134,11 +142,9 @@ for layer in model.layers:
 # LAYER3_BIAS:
 # [1.3300072]
 \end{lstlisting}
-    Sin embargo, esta aproximación a la hora de obtener los pesos es problemática. Y es que al mostrar los pesos en formato humano (decimal), se pierde precisión. Para solucionar esto se necesita algo más directo y de bajo nivel.
+    Sin embargo, esta aproximación es problemática a la hora de obtener los pesos. Y es que al mostrar los pesos en formato humano (decimal), se pierde precisión. Para solucionar esto se necesita algo más directo y de bajo nivel.
     
-    \item La solución a la que se ha llegado es la más evidente, exportar los datos en binario codificado en hexadecimal, para leerlo como dato en C. Realizar esto en Python no es particularmente difícil, y si bien existen mejores formas de interfacear con código C, se ha de recordar que esto simplemente es una prueba de laboratorio y no un producto final.
-    
-    De esta forma, se define una función para la conversión de datos en hexadecimal:\medskip
+    \item La solución a la que se ha llegado es la más evidente, exportar los datos en formato máquina, es decir, binario codificado en hexadecimal. Realizar esto en Python no es particularmente difícil, y si bien existen mejores formas de interfacear con código C, se ha de recordar que esto es simplemente una prueba de laboratorio y no un producto final. De esta forma, se define una función para la conversión de datos en hexadecimal:\medskip
 \begin{lstlisting}[language=Python]
 # https://docs.python.org/3/library/struct.html
 FLOAT_BE = ">f"
@@ -180,7 +186,7 @@ def np_array_to_hex(array, byte_format):
 # 3faa3dad
 \end{lstlisting}
 
-    \item Por último pero no por ello menos importante, se han de exportar también los datos de entrada del propio dataset. Como se discutirá más adelante, el formato del documento que lee el código C compilado contará con una primera línea especificando el número de líneas que va a leer, y un dato por línea. De esta forma, si la entrada contiene 24 parámetros y se ha de inferir 1000 datos, el contenido del documento será de 1001 líneas, siendo la primera \texttt{1000}, y el resto conteniendo los datos a inferir.\medskip
+    \item Por último, pero no por ello menos importante, se han de exportar también los datos de entrada del propio dataset. Como se discutirá más adelante, el formato del documento que lee el código C compilado contará con una primera línea especificando el número de líneas que va a leer, y un dato por línea. De esta forma, si la entrada contiene inferir 1000 datos, el contenido del documento será de 1001 líneas, siendo la primera \texttt{1000}, y el resto conteniendo los datos a inferir.\medskip
 \begin{lstlisting}[language=Python]
 # Get original stdout here, in order to print to a file
 my_stdout = sys.stdout
@@ -195,7 +201,7 @@ with open('input.txt', 'w') as f:
     # Finally restore stdout
     sys.stdout = my_stdout
 \end{lstlisting}
-    Al ejecutar el siguiente comando, se crea en el directorio de trabajo el fichero \texttt{input.txt}, que contiene 1000 entradas. El fichero se ha recortado a 5 entradas por conveniencia.\medskip
+    Al ejecutar el código anterior, se crea en el directorio de trabajo el fichero \texttt{input.txt}, que contiene un total de 1000 entradas en este caso. Para este ejemplo, el fichero se ha recortado a 5 entradas por conveniencia.\medskip
 \begin{lstlisting}
 5
 3,6,4,13,2,5,1,4,3,28,3,2,2,2,1,1,0,1,0,0,1,0,0,1
@@ -205,7 +211,7 @@ with open('input.txt', 'w') as f:
 4,6,2,13,3,3,1,4,1,62,3,1,1,1,1,0,0,1,0,0,1,0,0,1
 \end{lstlisting}
 
-    Conviene recalcar que en este caso el tipo de los datos de entrada es entero. En caso de dicho caso ser flotante, se procedería a exportar en formato hexadecimal para, como previamente, no perder precisión.
+    Conviene recalcar que en este caso el tipo de los datos de entrada es entero. En caso de ser datos en coma flotante, se procedería, en función de la relevancia de la precisión de los datos, a exportar en formato decimal (precisión poco relevante) o hexadecimal (precisión muy relevante).
 \end{enumerate}
 
 \subsubsection{Extracción de datos dispersos}
@@ -232,17 +238,17 @@ Para la extracción de datos dispersos se procede de igual forma que con datos d
 # 3ec81415    
 \end{lstlisting}
 
-Como se puede apreciar dentro de las zonas recortadas, la mayor parte de datos son 0x80000000 o 0x00000000, siendo ambos representaciones del número cero en coma flotante. Con ayuda de la función \texttt{nonzero} de \texttt{numpy} se puede extraer facilmente cada valor diferente de cero con sus coordenadas vertical y horizontal para importar más adelante en C, tal como se muestra en la sección siguiente, \nameref{sec:importacion_valores_c}.
+Como se puede apreciar dentro de las zonas recortadas, la mayor parte de datos son 0x80000000 o 0x00000000, siendo ambos representaciones del número cero en coma flotante. Con ayuda de la función \texttt{nonzero} de \texttt{numpy} se puede extraer fácilmente cada valor diferente de cero con sus coordenadas verticales y horizontales para importar más adelante en C, tal como se muestra en la siguiente sección.
 
 \section{Importación de valores en C}
 \label{sec:importacion_valores_c}
-En esta sección se habla de cómo se importan los datos extraídos del modelo \acrshort{tf} denso o disperso, creado en la sección anterior.
+En esta sección se describe cómo se importan los datos extraídos de los modelos \acrshort{tf} densos o dispersos, creados en la sección anterior.
 
 \subsection{Importación de matrices densas}
 \label{ssec:importacion_matrices_densas}
-El lenguaje de programación C almacena las matrices por filas. Esto es, dada una matriz $M \times N$, se almacenarán en memoria $N$ elemenos de la primera fila, seguidos por $N$ elementos de la segunda, etc. Aprovechando esta característica de C, y haciendo uso del tan granular acceso a bajo nivel que nos permite hacer este lenguaje, se importan las matrices de pesos y \textit{bias} de las diferentes capas desde la zona de memoria constante, o para x86, la sección \texttt{.text}. Esto implica que una vez el programa se carga a memoria no lee ningún archivo salvo la entrada de datos.
+El lenguaje de programación C almacena las matrices por filas. Aprovechando esta característica, y haciendo uso del tan granular acceso a bajo nivel que nos permite hacer este lenguaje, se importan las matrices de pesos y \textit{bias} de las diferentes capas desde la zona de memoria constante, o para x86, la sección \texttt{.text}. Esto implica que, una vez que el programa se carga en memoria, este no lee ningún archivo salvo la entrada de datos.
 
-Mediante manejo de \textit{strings} en Python, y recordando que la arquitectura x86(y \_64) es \textit{little endian}\footnote{\url{https://es.wikipedia.org/wiki/Endianness}}, los valores constantes se importan al código con las siguientes líneas:\medskip
+Mediante funciones de manejo de \textit{strings} en Python para la generación de estas líneas de código, y recordando que la arquitectura x86(y \_64) es \textit{little endian}\footnote{\url{https://es.wikipedia.org/wiki/Endianness}}, los valores constantes se importan al código con las siguientes líneas:\medskip
 \begin{lstlisting}[language=C]
 #define INPUT_SIZE 24
 #define LAYER1_SIZE 5
@@ -261,13 +267,13 @@ const fp32 * layer3_weights = (fp32 *)
 const fp32 * layer3_bias = (fp32 *) "\xc8\x2d\x40\x3d";
 \end{lstlisting}
 
-Estos valores, al ser \textit{casteados} a un vector de \texttt{fp32}, más adelante pueden ser accedidos con el \textit{stride} de dicho tipo de datos.
+Estos valores, al ser \textit{casteados} a un vector de \texttt{fp32}, pueden ser accedidos más adelante con el \textit{stride} de dicho tipo de dato (en este caso, 32 bits).
 
 \subsection{Importación de matrices dispersas}
 \label{ssec:importacion_matrices_dispersas}
-En el caso de las matrices dispersas el almacenamiento de datos no es tan sencillo. Como se comenta en el Capítulo de \nameref{chap:conceptos_basicos}, existen múltiples maneras de representar una matriz dispersa en memoria. La que se emplea en la creación de dicha matriz es la \texttt{COO} (Subsección \ref{ssec:almacenamiento_matrices_dispersas}). De esta manera, es suficiente con exportar una lista de valores acompañado con las coordenadas de cada uno de ellos. Estos valores, tanto los de la matriz como las coordenadas de los mismos, y de igual manera que en la \nameref{ssec:importacion_matrices_densas} se guardan en la sección de texto.
+En el caso de las matrices dispersas el almacenamiento de datos no es tan sencillo. Como se comenta en el Capítulo \ref{chap:conceptos_basicos}, existen múltiples formatos de representación de matrices dispersas en memoria. El formato que se emplea en la creación de dicha matriz es la \acrshort{coo} (Subsección \ref{ssec:almacenamiento_matrices_dispersas}). De esta manera, es suficiente con exportar una lista de valores acompañado con las coordenadas de cada uno de ellos. Estos valores, tanto los de la matriz como las coordenadas de los mismos, y de igual manera que en la Subsección \ref{ssec:importacion_matrices_densas}, se guardan en la sección de texto.
 
-Esto significa que, en comparación con la versión densa, el vector de pesos es mucho más pequeño (en función de la densidad de la matriz que representa), y aparecen dos vectores de coordenadas para \texttt{i} y \texttt{j}:\medskip
+Esto significa que, en comparación con la versión densa, el vector de pesos es mucho más pequeño (en función de la densidad de la matriz que representa), y aparecen dos vectores de coordenadas, que identifican las abscisas y ordenadas de cada dato \textit{nonzero}, siendo estos \texttt{i} y \texttt{j}, respectivamente:\medskip
 \begin{lstlisting}[language=C]
 #define INPUT_SIZE 24
 #define LAYER1_SIZE 5
@@ -299,15 +305,11 @@ const fp32 * layer3_bias = (fp32 *) "\x15\x14\xc8\x3e";
 
 \section{Generación dinámica de código C a partir del modelo TensorFlow}
 \label{sec:generacion_din_modelo_tf}
-Tras ver cómo extraer los valores de pesos, \textit{bias}, y datos de entrada del entorno de \acrlong{tf}, se cuenta con todas las herramientas necesarias para generar el código C, o prácticamete cualquier código si se cuenta con las herramientas y conocimientos adecuados.
+Tras ver cómo extraer los valores de pesos, \textit{bias} y datos de entrada del entorno de \acrlong{tf}, se cuenta con todas las herramientas necesarias para generar el código C, o código para prácticamente cualquier lenguaje si se cuenta con los conocimientos adecuados.
 
 \subsection{Decisiones previas de diseño}
 \label{ssec:decisiones_previas_diseno}
-Los útiles comunes a cualquier código generado, sea denso o disperso, se han centralizado en los ficheros \texttt{common.\{c|h\}}.
-
-Primeramente se ha decidido emplear un tipo \texttt{union} para la implementación de los datos en coma flotante, al permitir estos un control superior a nivel de byte, sin complicaciones adicionales como \textit{casting} de punteros.
-
-Los únicos dos tipos de datos implementados son \texttt{fp32} y \texttt{fp64}, con nombres, considero, bastante representativos. El tipo unión, por ejemplo, para el flotante de 32 bits es el siguiente:\medskip
+Las funciones, definiciones de tipo, y otros recursos comunes a todos los códigos generados, sean estos densos o dispersos, se han centralizado en los ficheros \texttt{common.\{c|h\}}. Primeramente, se ha decidido emplear un tipo \texttt{union} para la implementación de los datos en coma flotante, al permitir estos un control superior a nivel de byte, sin complicaciones adicionales como \textit{casting} de punteros. Los únicos dos tipos de datos implementados son \texttt{fp32} y \texttt{fp64}, con nombres representativos de su precisión. Por ejemplo, el tipo \texttt{union} para el flotante de 32 bits es el siguiente:\medskip
 \begin{lstlisting}[language=C]
 typedef union _fp32 {
     uint32_t raw;
@@ -316,9 +318,9 @@ typedef union _fp32 {
 } fp32;
 \end{lstlisting}
 
-Así, las funciones implementadas tendrán versiones para flotante de 32 y 64 bits. El sufijo que indica la precisión del flotante será \texttt{\_\_fp32} y \texttt{\_\_fp64} para 32 y 64 bits de precisión, respectivamente. Las pocas funciones implementadas han sido necesarias para el paso de aplicar el \textit{bias}, y siguen esta nomenclatura, a fin de mejorar una futura parametrización extra en la generación del código.
+Así, las funciones implementadas tendrán versiones para flotantes de 32 y 64 bits. El sufijo que indica la precisión del flotante será \texttt{\_\_fp32} y \texttt{\_\_fp64} para 32 y 64 bits de precisión, respectivamente. Las pocas funciones implementadas han sido necesarias para la aplicación del \textit{bias}, y siguen esta nomenclatura con el propósito de mejorar una futura parametrización extra en la generación de código.
 
-Se ha barajado también la posibilidad de emplear funciones genéricas que brinda el compilador gcc, pero al final por simplicidad, y dada la naturaleza estática de una \textit{\acrlong{poc}}, se ha optado por no incluir estos macros. Un ejemplo para la función \texttt{fast\_sigmoid} sería la siguiente:\medskip
+Se ha barajado también la posibilidad de emplear funciones genéricas que brinda el compilador gcc, pero al final por simplicidad, y dada la naturaleza estática de una Prueba de Concepto, se ha optado por no incluir estas macros. Un ejemplo para la función \texttt{fast\_sigmoid} sería el siguiente:\medskip
 \begin{lstlisting}[language=C]
 #define fast_sigmoid(X) _Generic((X), \
 fp32:fast_sigmoid__fp32, \
@@ -333,17 +335,17 @@ fp64 fast_sigmoid__fp64(fp64);
 
 \subsection{Matrices densas}
 \label{ssec_gdin_matrices_densas}
-La forma más sencilla y cronológicamente la primera en ser implementada es la basada en matrices densas. Esta implementación se apoya en la ampliamente disponible librería \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}. A pesar de que el proceso de desarrollo, pruebas, automatización, y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.
+La forma más sencilla (y cronológicamente la primera en ser implementada) es la basada en matrices densas. Esta implementación se apoya en la ampliamente disponible librería \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}. A pesar de que el proceso de desarrollo, pruebas, automatización y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.
 
-Tal como se comenta en el Capítulo de \nameref{chap:conceptos_basicos}, Sección \ref{sec:redes_reuronales_densas}, el programa debe hacer lo siguiente:
+Tal como se comenta en la Sección \ref{sec:redes_reuronales_densas}, el programa debe hacer lo siguiente:
 
 \begin{enumerate}
-    \item Leer los datos de entrada
-    \item Multiplicar los datos de entrada por cada una de las capas
-    \item Tratar adecuadamente los datos de salida
+    \item Leer los datos de entrada.
+    \item Multiplicar los datos de entrada por cada una de las capas.
+    \item Tratar adecuadamente los datos de salida.
 \end{enumerate}
 
-Estos sencillos tres pasos tienen su complicación, debido a que hay que implementar todo de cero y automatizarlo.
+Estos tres sencillos pasos tienen su complicación, debido a que hay que implementar todo desde cero y automatizar su generación. Para cada punto anterior, la estructura básica del programa debe ser la siguiente:
 
 \begin{enumerate}
     \item Leer los datos de entrada es quizás de lo más sencillo. Es manejo de ficheros básico mediante \texttt{fscanf}:\medskip
@@ -355,7 +357,7 @@ if((inputfile = fopen(argv[1], "r")) == NULL){
     exit(-1);
 }
 
-// Parse input dims and allocate memory consquently
+// Parse input dims and allocate memory consequently
 int input_dim;
 fscanf(inputfile, "%d", &input_dim);
 
@@ -371,16 +373,24 @@ for(int i = 0; i < INPUT_SIZE * input_dim; i++){
 fclose(inputfile);
 \end{lstlisting}
 
-    \item Para realizar la multiplicación de matrices, y siguiendo con este ejemplo, se emplea la función \texttt{cblas\_sgemm} para la mutiplicación. El resultado se guarda de forma aditiva sobre \texttt{C}, por lo que es necesario que dicha matriz esté a cero.\medskip
+    \item Para realizar la multiplicación de matrices, y siguiendo con este ejemplo, se emplea la función \texttt{cblas\_sgemm}. Esta función realiza un producto de matrices ampliado tal que $C = \alpha AB + \beta C$ El resultado se guarda de forma aditiva sobre $C$, por lo que es necesario que o bien dicha matriz esté a cero, o el factor $\beta$ sea cero.\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** SGEMM %s x %s ***\n", "layer0", "layer1");
 cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, input_dim,
             LAYER1_SIZE, LAYER0_SIZE, 1.f, (float *) layer0_out,
             LAYER0_SIZE, (float *) layer1_weights, LAYER1_SIZE,
-            1.f, (float *) layer1_out, LAYER1_SIZE);
+            0.f, (float *) layer1_out, LAYER1_SIZE);
 \end{lstlisting}
 
-    Tras la multiplicación de \texttt{A} por \texttt{B}, aditiva sobre \texttt{C}, se han de aplicar los \textit{bias} y la función de transferencia. Si bien podría haberse sumado sobre los \textit{bias} en la función previa, es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia. Esto es así ya que, especialmente si la función se paraleliza, probablemente \texttt{map\_and\_bias} sea \textit{memory-bound}, y un poco de computación extra no vaya a marcar la diferencia. Por el contrario, si se realizara operación sobre una matriz pre inicializada, se necesitaría replicar los valores del \textit{bias} \texttt{input\_dim} veces, lo cual también es \textit{memory-bound}.
+    Tras la multiplicación de $A$ por $B$, aditiva sobre $C$, se han de aplicar los \textit{bias} y la función de transferencia. 
+    
+    
+    
+    
+    
+    
+    
+    TODO COMPLETAR Si bien podría haberse sumado sobre los \textit{bias} en la función previa, es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia. Esto es así ya que, especialmente si la función se paraleliza, probablemente \texttt{map\_and\_bias} sea \textit{memory-bound}, y un poco de computación extra no vaya a marcar la diferencia. Por el contrario, si se realizara operación sobre una matriz pre inicializada, se necesitaría replicar los valores del \textit{bias} \texttt{input\_dim} veces, lo cual también es \textit{memory-bound}.
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** Map and Bias %s with %s function ***\n", "layer1_out", "sigmoid__fp32");
 map_and_bias__fp32(layer1_out, layer1_bias, input_dim, LAYER1_SIZE, 'N', sigmoid__fp32);

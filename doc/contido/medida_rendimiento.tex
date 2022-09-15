@@ -5,7 +5,7 @@
 
 \section{Metodología}
 \label{sec:metodologia}
-La medida del rendimiento de las pruebas de concepto no es tarea trivial. Al ser una simple \textit{\acrlong{poc}} la función \texttt{map\_and\_bias} no está debidamente optimizada con OpenMP. Realizar esta optimización no es difícil, pero quizás sería innecesario cuando lo que se pretende es medir las posibilidades de una aproximación, y no optimizar y trabajar a fondo en ella.
+La medida del rendimiento de las pruebas de concepto no es tarea trivial. Al ser una simple Prueba de Concpto la función \texttt{map\_and\_bias} no está debidamente optimizada con OpenMP. Realizar esta optimización no es difícil, pero quizás sería innecesario cuando lo que se pretende es medir las posibilidades de una aproximación, y no optimizar y trabajar a fondo en ella.
 
 Por esta razón se ha decidido simplemente implementar de forma sencilla la generación de código con las librerías OpenBLAS y librsb, sin añadir OpenMP u optimizaciones mayores en funciones auxiliares. El \textit{overhead} que añade el tratamiento auxiliar de datos es lo suficientemente bajo como para no necesitar paralelización en un entorno de pruebas.
 
