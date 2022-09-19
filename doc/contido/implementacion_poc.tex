@@ -382,21 +382,15 @@ cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, input_dim,
             0.f, (float *) layer1_out, LAYER1_SIZE);
 \end{lstlisting}
 
-    Tras la multiplicación de $A$ por $B$, aditiva sobre $C$, se han de aplicar los \textit{bias} y la función de transferencia. 
-    
-    
-    
-    
-    
-    
-    
-    TODO COMPLETAR Si bien podría haberse sumado sobre los \textit{bias} en la función previa, es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia. Esto es así ya que, especialmente si la función se paraleliza, probablemente \texttt{map\_and\_bias} sea \textit{memory-bound}, y un poco de computación extra no vaya a marcar la diferencia. Por el contrario, si se realizara operación sobre una matriz pre inicializada, se necesitaría replicar los valores del \textit{bias} \texttt{input\_dim} veces, lo cual también es \textit{memory-bound}.
+    Tras la multiplicación de $A$ por $B$, aditiva sobre $C$, se han de aplicar los \textit{bias} y la función de transferencia. Esto se realia con una función ad-hoc que combina ambas acciones en un solo recorrido lineal por memoria: \texttt{map\_and\_bias}.
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** Map and Bias %s with %s function ***\n", "layer1_out", "sigmoid__fp32");
 map_and_bias__fp32(layer1_out, layer1_bias, input_dim, LAYER1_SIZE, 'N', sigmoid__fp32);
 \end{lstlisting}
 
-    La implementación inicial de \texttt{map\_and\_bias} es similar a la siguiente:
+    Si bien es cierto que en lugar de aplicar los \textit{bias} junto a la función de transferencia en la función previa, es posible realizar $C = AB + bias$, con una copia de \textit{bias} por fila, es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia, ya que así se obtiene una mayor intensidad aritmética. Esta mayor intensidad aritmética es especialmente relevante cuando una función se paraleliza, ya que lo más probable es que \texttt{map\_and\_bias} sea \textit{memory-bound} en mayor o menor medida en función de la función de transferencia. Además, si se realizara operación sobre una matriz pre-inicializada con los \textit{bias} en cada fila, se necesitaría replicar los valores de \textit{bias} \texttt{input\_dim}\footnote{Se denomina \texttt{input\_dim} al número de filas de la entrada, es decir, el número de datos multidimensionales que entran a la red.} veces, replicación que no es gratuita.
+
+    Una implementación básica de \texttt{map\_and\_bias} es similar a la siguiente:
 \begin{lstlisting}[language=C]
 void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint32_t M, const uint32_t N, fp32 (* map_function)(fp32 x)){
     for (uint32_t i = 0; i < M; i++){
@@ -408,35 +402,42 @@ void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint3
 }
 \end{lstlisting}
 
-    \item Tras repetir el paso anterior tantas veces como capas tenga la arquitectura, los resultados se pueden encontrar en la matriz \texttt{layerN\_out}, siendo \texttt{N} el número de capas. Estos datos pueden ser exportados, mostrados, contados, etc. Como en este caso interesa perfilar y visualizar las características del \texttt{workload}, lo más lógico es primero probar con una cantidad de reducida de datos para verificar el correcto funcionamiento del código generado.
+    \item Tras repetir el paso anterior tantas veces como capas tenga la arquitectura, la salida de cada capa \texttt{M} de la red se puede encontrar en \texttt{layerM\_out}, pudiéndose encontrar la salida de la red en la matriz \texttt{layerN\_out} para una red de \texttt{N} capas. Estos datos pueden ser exportados, mostrados, contados, posprocesados, etc. Como en este caso interesa perfilar y visualizar las características del \texttt{workload}, lo más lógico es primero probar con una cantidad reducida de datos para verificar el correcto funcionamiento del código generado.
     
-    Tras verificar el correcto funcionamiento, a pesar de que no sería necesario nada más, se añade un pequeño resumen, que clasifica el número de predicciones. Esto es realmente útil para comparar con la cifra que arroja \acrshort{tf}.
+    Tras verificar el correcto funcionamiento de la red, y observar que para las implementaciones con \texttt{OpenBLAS} y \texttt{librsb}, los resultados son exactamente iguales a los proporcionados por \texttt{numpy}, se añade un pequeño resumen de ejecución, que clasifica el número de predicciones mayores o menores a 0,5. Esto es realmente útil para comparar la validez de los resultados con respecto a \acrlong{tf} de forma rápida.
+
+\begin{lstlisting}[language=C]
+printf("\n\n--- SUMMARY ---\n");
+printf(" - Batch size = %d\n", input_dim);
+printf(" - Total >0.5 predictions = %d\n", greater_count);
+printf(" - %% >0.5 = %.2lf%%\n", ((double) greater_count / (double) input_dim)*100);
+printf("\n");
+\end{lstlisting}
+
 \end{enumerate}
 
 
 \subsection{Matrices dispersas}
 \label{ssec_gdin_matrices_dispersas}
-Una vez comprendido cómo se procede con matrices de pesos densas, y apoyado por la Sección \ref{sec:redes_reuronales_dispersas} de los \nameref{chap:conceptos_basicos}, los pasos a mayores que se deben realizar son:
+Una vez detallado cómo se procede con matrices de pesos densas, y según lo visto en la Sección \ref{sec:redes_reuronales_dispersas}, los pasos a mayores que se deben realizar para implementar una red neuronal basada en matrices dispersas son:
 
 \begin{enumerate}
     \item Transponer la entrada y salida.
     \item Ajustar los parámetros de las funciones densas.
-    \item Sustituir las matrices de pesos dispersas por densas.
+    \item Sustituir las matrices de pesos densas por disperspasp.
     \item Sustituir las funciones densas por sus equivalentes dispersas.
 \end{enumerate}
 
-Para realizar estos pasos primero se necesita una librería de \acrshort{blas} que soporte matrices dispersas, y exponga una cabecera para C. A ser posible, y como en cualquier proyecto, es conveniente que dicha dependencia sea moderadamente conocida, dado que eso asegurará una mayor calidad del código interno, así como un mejor soporte. Cumpliendo estos requerimientos, se ha optado por la utilización de \texttt{librsb}\footnote{Página principal \url{http://librsb.sourceforge.net}, con paquete en el AUR (ArchLinux User Repository) \url{https://aur.archlinux.org/packages/librsb}, así como parquete mantenido en Ubuntu \url{https://packages.ubuntu.com/jammy/librsb-dev}}, de la cual se emplea su \textit{Sparse BLAS interface}.
-
-De esta forma, los pasos para adaptar el código para trabajar con matrices dispersas en los pesos son:
+Para realizar estos pasos primero se necesita una librería \acrshort{blas} que soporte matrices dispersas y que exponga una cabecera para C. A ser posible, y como en cualquier proyecto, es conveniente que una dependencia \textit{core}, como lo es la librería de multiplicación de matrices en este caso, sea moderadamente conocida, dado que ello asegurará una mayor calidad del código interno, así como un mejor soporte. Cumpliendo estos requerimientos, se ha optado por la utilización de la librería \texttt{librsb}\footnote{Página principal \url{http://librsb.sourceforge.net}, con paquete en el AUR (ArchLinux User Repository) \url{https://aur.archlinux.org/packages/librsb}, así como parquete mantenido en Ubuntu \url{https://packages.ubuntu.com/jammy/librsb-dev}}, de la cual se emplea su interfaz \textit{Sparse BLAS}. De esta forma, los pasos para adaptar el código para trabajar con matrices de pesos dispersos son:
 
 \begin{enumerate}
-    \item Para transponer las matrices de entrada y de salida se emplea una función \textit{built-in} de OpenBLAS, por lo que en este aspecto el código está ligado al dicha librería. De todos modos, no parece una dependencia muy complicada de sobrellevar, puesto que esta implementación es muy habitual en la industria.\medskip
+    \item Para transponer las matrices de entrada y de salida se emplea una función \textit{built-in} de OpenBLAS, por lo que en este aspecto el código está ligado a dicha librería. De todos modos, no parece una dependencia muy complicada de sobrellevar, puesto que esta implementación es muy habitual en la industria, y aún por encima es una función que solo se usará en esta prueba de concepto. A continuación se muestra cómo transponer la entrada. Para transponer la salida se procede de forma análoga, como se muestra más adelante.\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** Transposing input out-of-place ***\n");
 cblas_somatcopy(CblasRowMajor, CblasTrans, input_dim, LAYER0_SIZE, 1.f, (float *) input, LAYER0_SIZE, (float *) temp_input, input_dim);
 \end{lstlisting}
 
-    Este procedimiento, que se realiza \textit{out-of-place} por la mejoría en rendimiento que supone al transponer matrices no cuadradas, cuenta con un procedimiento previo y posterior con punteros en el que no es necesario profundizar, pero si que se ha omitido un pequeño detalle en el anterior campo de código. Y es que debido a la forma en la que C almacena las matrices en memoria, cuando la matriz es un vector ``vertical'' (una matriz con varias filas y una sola columna), en memoria dicho vector se representa de igual manera que si el vector es ``horizontal'' (una matriz con una sola fila y varias columnas). Por esta razón, y debido a que los tamaños de cada capa se conocen en tiempo de compilación, es posible ahorrar un pequeño tiempo y espacio de código al añadir un simple macro de preprocesador. A continuación se muestra el bloque que realiza la transposición de la capa de salida de forma transparente al resto del programa:\medskip
+    Este procedimiento, que se realiza \textit{out-of-place} por la mejora en rendimiento que supone al transponer matrices no cuadradas, es complementado con lógica básica de punteros previa y posterior en la que no es necesario profundizar, pero que hace que esta transposición sea transparente al resto del código. A continuación se muestra como ejemplo el bloque que realiza la transposición de la capa de salida de forma transparente al resto del programa, para una red neuronal de tres capas:\medskip
 \begin{lstlisting}[language=C]
 #if LAYER3_SIZE != 1
 fp32 * temp_output = malloc(input_dim * LAYER3_SIZE * sizeof(fp32));
@@ -448,7 +449,7 @@ temp_output = NULL;
 #endif
 \end{lstlisting}
 
-    \item En cuanto a ``ajustar los parámetros de las funciones densas'', este es un paso intermedo que no se aprecia en la versión final. En este paso se comprueba que el resultado no varía al realizar la transformación necesaria para funcionar con las funciones \textit{sparse} de \acrshort{blas}. Fuera de los cambios en los parámetros, se hace necesario un cambio en la función \texttt{map\_and\_bias}, que ahora debe aplicar los \textit{bias} en un \textit{layout} de memoria diferente. Para esto se añade un parámetro \texttt{transA}, quedando la modificación en:\medskip
+    \item En cuanto a ``ajustar los parámetros de las funciones densas'', este es un paso intermedio que no se aprecia en la versión final. En este paso se comprueba que el resultado no varía al adaptar el código a las funciones \textit{sparse BLAS} de \texttt{librsb}. Fuera de los cambios en los parámetros, también se hace necesario un cambio en la función \texttt{map\_and\_bias}, que ahora debe aplicar los \textit{bias} en un \textit{layout} de memoria diferente. Para esto se añade un parámetro \texttt{transA}. Este parámetro no transpone la matriz, como si que ocurre en \textit{BLAS}, sino que más bien indica a \texttt{map\_and\_bias} que la matriz sobre la que aplica los \textit{bias} y función de transferencia está transpuesta en memoria, por lo que el \textit{traversing} debe ser diferente. La modificación de dicha función consiste en:\medskip
 \begin{lstlisting}[language=C]
 void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint32_t M, const uint32_t N, const char transA, fp32 (* map_function)(fp32 x)){
     switch (transA){
@@ -470,9 +471,9 @@ void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint3
 }
 \end{lstlisting}
 
-    \item El siguiente paso es sustituir las matrices densas por matrices dispersas. Para esto se emplea el mismo método descrito anteriormente de \textit{hardcodeo} de datos en la Subsección \ref{ssec:importacion_matrices_dispersas}. De esta forma, la previamente mencionada \texttt{layer1\_weights} se divide en el vector de valores y los vectores de coordenadas.
+    \item El siguiente paso es sustituir las matrices de pesos densas por matrices de pesos dispersas. Para esto se emplea el mismo método de \textit{hardcodeo} de datos en la Subsección \ref{ssec:importacion_matrices_dispersas} mediante el uso de \texttt{\#define}. De esta forma, lo que previamente sería \texttt{layerN\_weights}, y una \textit{string} de datos binaros a continuación, se divide ahora en \texttt{layerN\_sp\_weights} (\textit{layerN sparse weights}, que contiene los valores distintos de cero para la matriz de pesos dispersa), así como en dos vectores de coordenadas \texttt{layerN\_i} y \texttt{layerN\_j}.
     
-    Estos datos son necesarios para la creación de las matrices dispersas, indicando \texttt{layerN\_i} y \texttt{layerN\_j} la fila y la columna de cada valor en el array de pesos, respectivamente. Además, se emplea el número de \textit{nonzeroes} para no sólo la creación de la matriz en la función, sino además como comprobación extra en tiempo de compilación. De esta forma, las matrices dispersas se crean de la siguiente manera:
+    Estos datos son necesarios para la creación de las matrices dispersas, indicando \texttt{layerN\_i} y \texttt{layerN\_j} la fila y la columna de cada valor en el array de pesos, respectivamente. Además, también es necesario el número de \textit{nonzeros} (\texttt{layerN\_nz}) para la creaación de dichas matrices. Sabiendo esto, las matrices dispersas se crean de la siguiente manera:
 \begin{lstlisting}[language=C]
 blas_sparse_matrix layer1_sp_weights = blas_invalid_handle;
 /* [...] */
@@ -483,7 +484,7 @@ BLAS_suscr_insert_entries(layer1_sp_weights, layer1_nz, (float *)
 BLAS_suscr_end(layer1_sp_weights);
 \end{lstlisting}
 
-    \item Finalmente queda emplear las funciones adecuadas para la mutiplicaciones de matrices $d \times D$. Este proceso consiste básicamente en sustituir la función \texttt{gemm} por una función \texttt{usmm}, así como indicar a \texttt{map\_and\_bias} que la matriz de resultados se encuentra transpuesta. Los valores de $M$ y $N$ (siendo la matriz \texttt{C} de dimensiones $M\times N$) también deben intercambiarse.
+    \item Finalmente, queda emplear las funciones adecuadas para la mutiplicación de matrices $d\times D$. Este proceso consiste básicamente en sustituir la función \texttt{[sdcz]gemm} por una función \texttt{[sdcz]usmm} (Subsección \ref{ssec:propiedades_producto_matrices_dispersas}), así como indicar a \texttt{map\_and\_bias} que la matriz de resultados se encuentra transpuesta. Los valores de $M$ y $N$ de la matriz original no transpuesta \texttt{C}, también deben intercambiarse.
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** SUSMM %s(T) x %s(T) ***\n", "layer3", "layer2");
 BLAS_susmm(blas_rowmajor, blas_trans, input_dim, 1.f, layer3_sp_weights,
@@ -496,19 +497,29 @@ map_and_bias__fp32(layer3_out, layer3_bias, LAYER3_SIZE, input_dim,
 \end{lstlisting}
 \end{enumerate}
 
-\section{Posibilidades de esta aproximación}
-\label{sec:posibilidades_esta_aproximacion}
-Las posibilidades de esta aproximación son muchas. Generar código C a partir de un modelo que precisa de soporte en Python es algo especialmente útil para sistemas sin dicho soporte. Es cierto que existe TensorFlow Lite (TFLite) para sistemas embebidos, pero la flexibilidad que aporta crear un código C, la posibilidad de paralelizar tanto en memoria compartida como distribuida dicho código, así como la experiencia obtenida en la realización del proyecto son motivos de peso.
+\section{Posibilidades de la generación de código}
+\label{sec:posibilidades_de_la_generacion_de_codigo}
+Las posibilidades de esta aproximación al análisis y medida del rendimiento son muchas. Generar código C a partir de un modelo que precisa de soporte en Python es algo especialmente útil para sistemas sin dicho soporte. Es cierto que existe TensorFlow Lite para sistemas embebidos, pero la flexibilidad que aporta crear un código C y la posibilidad de paralelizar tanto en memoria compartida como distribuida dicho código son motivos de peso.
 
-En conjunción con todo esto, el hecho de emplear matrices dispersas viene no solamente condicionado por la literatura ya existente, que destaca los beneficios en cuanto a la proporción rendimiento/precisión de redes podadas, sino que viene también motivada por las labores de investigación en cuanto a análisis estático de código y empaquetamiento de operandos para vectorización conducidas en \cite{exploring_simd_instructions_packing_marcos_horro}.
+En conjunción con todo esto, el hecho de emplear matrices dispersas viene no solamente condicionado por la literatura ya existente, que destaca los beneficios en cuanto a la proporción rendimiento/precisión de redes podadas, sino que viene también motivada por las labores de investigación en cuanto a análisis estático de código y empaquetamiento de operandos para vectorización conducidas en \cite{custom_high_performance_vector_codegen_sparse_computations}.
 
-A continuación se mencionan según la subsección algunas de las posibilidades que abre este concepto.
+A continuación, se mencionan algunas de las posibilidades que abre esta posibilidad de generar código a partir de un modelo pre-entrenado.
 
 \subsection{En plataformas de cómputo generalistas}
 \label{ssec:posibilidades_en_computo_generalistas}
-En una plataforma de cómputo generalista, el mundo de tanto el entrenamiento como la inferencia está dominado por las \acrshort{gpu} (\textit{\acrlong{gpu}}). Estos dispositivos son muy convenientes para las cargas de trabajo que se manejan en deep learning, y aportan aceleraciones astronómicas sobre su contraparte en CPU. A pesar de que librerías como \texttt{numpy} están altamente optimizadas para su ejecución en multitud de redes, incluyendo las basadas en pura multiplicación de matrices dispersas, es cierto que incorporando la investigación conducida por Marcos Horro en \cite{marta_marcos_horro_9804589}, así como otras posibles mejoras posteriores, es posible que se mejore el rendimiento o consumo energético de una red basada en matrices dispersas.
+En el mundo de la inteligencia artificial, tanto el entrenamiento como la inferencia de redes neuronales están dominados por las \acrshort{gpu}s (\textit{\acrlong{gpu}s}). Estos dispositivos son muy convenientes para las cargas de trabajo que se manejan en deep learning, y aportan aceleraciones muy significativas sobre su contraparte en CPU. Sin embargo, los principales fabricantes de CPUs están realizando fuertes inversiones en la adaptación de sus arquitecturas tradicionales para la aceleración de \textit{workloads} de \acrshort{ia}. Fabricantes como Intel y AMD, pero también algunos como lo son ARM o Qualcomm investigan para mejorar el rendimiento y, sobre todo en el caso de estos últimos, la eficiencia energética de sus procesadores, donde el elevado consumo de una \acrshort{gpu} no es una opción.
 
-Por esta razón, a pesar de que a día de hoy es difícil mejorar el rendimiento de una red dispersa sin afectar a su precisión, incorporando estas nuevas técnicas se podría obtener una mayor precisión con igual rendimiento, o un mayor rendimiento a igual precisión. Además, esta inferencia podría realizarse en entornos de memoria compartida o distribuida, únicamente alterando la correspondiente zona generación de código para incorporar los cambios necesarios.
+Dada esta situación, y a pesar de que librerías como \texttt{numpy} están altamente optimizadas, es cierto que incorporando la investigación acerca de empaquetamiento de operandos para operaciones con matrices dispersas conducida por Marcos Horro en \cite{horro2022manycore}, es posible que se mejore el rendimiento y consumo energético de una red basada en matrices dispersas en una plataforma de cómputo generalista basada en CPU con extensiones vectoriales (tales como las SSE y AVX\footnote{\url{https://en.wikipedia.org/wiki/Advanced\_Vector\_Extensions}} de Intel, o Neon\footnote{\url{https://developer.arm.com/Architectures/Neon}} de ARM).
+
+Por esta razón, a pesar de que a día de hoy es difícil mejorar el rendimiento de una red dispersa sin afectar a su precisión, incorporando estas nuevas técnicas se podría obtener o bien una mayor precisión a igualdad de rendimiento, o un mayor rendimiento a igual precisión. Además, esta inferencia podría realizarse en entornos de memoria compartida o distribuida, únicamente alterando el correspondiente \gls{backend} 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%    mergear desde aquí
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 \subsection{En plataformas de cómputo heterogéneas}
 \label{ssec:posibilidades_en_computo_heterogeneas}
