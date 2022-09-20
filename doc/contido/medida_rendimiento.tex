@@ -153,7 +153,7 @@ Comenzando con $C$ en una región de memoria a ceros, la secuencia de operacione
     $C_{31} \pluseq d_{32} \cdot D_{21}$\\
 \end{center}
 
-Esta secuencia \textit{hardcodeada} se repetirá $k$ veces, (el número columnas de $D$ y $C$). Teniendo en cuenta que una operación \texttt{FMA} realiza dos FLOP, se puede concluir que el número de FLOP necesarios para el cálculo de la matriz resultado $C$ será $2 \cdot \#nz \cdot k$.
+Esta secuencia \textit{hardcodeada} se repetirá $k$ veces, (el número columnas de $D$ y $C$). Teniendo en cuenta que una operación FMA realiza dos FLOP, se puede concluir que el número de FLOP necesarios para el cálculo de la matriz resultado $C$ será $2 \cdot \#nz \cdot k$.
 
 \subsubsection{Estimación del rendimiento}
 Teniendo en cuenta que las matrices dispersas de pesos en el código disperso tienen una densidad del 5\% (o lo que es lo mismo, una \textit{sparsity} del 95\%), desde un punto de vista teórico se puede concluír que se deberían realizar un 95\% menos de operaciones en punto flotante.
