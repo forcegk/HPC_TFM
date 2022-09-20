@@ -16,6 +16,6 @@ def fn_algebra_ops(args):
 
     # Una optimización muy sencilla es meter el free de layer{idx-1} después del sgemm, pero debido a que esto es una poc, no voy a complicarme ahora mismo, a no ser que sea necesario. 
     local_algebra_ops.append(f"fprintf(stderr, \"*** Map and Bias %s(T) with %s function ***\\n\", \"layer{idx}_out\", \"{MAP_ALGORITHM}\");\n")
-    local_algebra_ops.append(f"    map_and_bias__fp32(layer{idx}_out, layer{idx}_bias, LAYER{idx}_SIZE, input_dim, 'T', {MAP_ALGORITHM});\n\n")
+    local_algebra_ops.append(f"    map_and_bias__fp32(layer{idx}_out, layer{idx}_bias, input_dim, LAYER{idx}_SIZE, 'N', {MAP_ALGORITHM});\n\n")
 
     return "".join(local_algebra_ops)

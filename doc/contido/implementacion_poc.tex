@@ -373,7 +373,7 @@ for(int i = 0; i < INPUT_SIZE * input_dim; i++){
 fclose(inputfile);
 \end{lstlisting}
 
-    \item Para realizar la multiplicación de matrices, y siguiendo con este ejemplo, se emplea la función \texttt{cblas\_sgemm}. Esta función realiza un producto de matrices ampliado tal que $C = \alpha AB + \beta C$ El resultado se guarda de forma aditiva sobre $C$, por lo que es necesario que o bien dicha matriz esté a cero, o el factor $\beta$ sea cero.\medskip
+    \item Para realizar la multiplicación de matrices, y siguiendo con este ejemplo, se emplea la función \texttt{cblas\_sgemm}. Esta función realiza un producto de matrices ampliado tal que $C = \alpha AB + \beta C$. El resultado se guarda de forma aditiva sobre $C$, por lo que es necesario que o bien dicha matriz esté a cero, o el factor $\beta$ sea cero.\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** SGEMM %s x %s ***\n", "layer0", "layer1");
 cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, input_dim,
