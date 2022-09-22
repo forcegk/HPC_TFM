@@ -219,11 +219,11 @@ Comenzando con $C$ en una región de memoria a ceros, la secuencia de operacione
 
 Esta secuencia \textit{hardcodeada} se repetirá $k$ veces, (el número columnas de $D$ y $C$). Teniendo en cuenta que una operación FMA realiza dos FLOP, se puede concluir que el número de FLOP necesarios para el cálculo de la matriz resultado $C$ será $2 \cdot \#nz \cdot k$.
 
-\subsection{Implementación y ventajas de localidad}
-\label{ssec:implementacion_ventajas_localidad}
+\subsection{Teoría y ventajas de localidad}
+\label{ssec:teoria_ventajas_localidad}
 Teniendo en cuenta que, para la matriz de pesos dispersa, sus valores \textit{nonzero} pueden almacenarse en memoria de forma secuencial, y recordando la propiedad asociativa de la suma, se puede conseguir un algoritmo de multiplicación de matrices que únicamente realice accesos por filas. Al fin y al cabo todo se reduce a cómo se representan las matrices en memoria.
 
-Para una multiplicación de matrices similar a la tratada en esta misma sección ($w^{d} \times x^{D} = out^{D}$, de dimensiones $m \times n$, $n \times k$ y $m \times k$), representando la dimensión común de medida $n$ en el eje horizontal, se puede apreciar la siguiente multiplicación de matrices, con el correspondiente \textit{layout} en memoria: 
+Por tanto, para una multiplicación de matrices similar a la tratada en esta misma sección ($w^{d} \times x^{D} = out^{D}$, de dimensiones $m \times n$, $n \times k$ y $m \times k$), se puede representar la dimensión común de medida $n$ en el eje horizontal. Como se puede apreciar, la siguiente multiplicación de matrices no está en una disposición compatible, pero tenerlas en este \textit{layout} en memoria es muy beneficioso: 
 \begin{gather}
     \begin{pmatrix}
         w_{00} & w_{01}\\
@@ -241,9 +241,54 @@ Para una multiplicación de matrices similar a la tratada en esta misma sección
         out_{00} & out_{01} & out_{02} & out_{03}\\
         out_{10} & out_{11} & out_{12} & out_{13}\\
         \vdots & \vdots & \vdots & \vdots
-    \end{pmatrix} \nonumber % https://latex.org/forum/viewtopic.php?t=20368
+    \end{pmatrix} \nonumber
 \end{gather}
 
+\subsection{Obtención de la secuencia de operaciones}
+\label{ssec:obtencion_secuencia_operaciones}
+El procedimiento a seguir será multiplicar cada una de las filas de la matriz $w^{d}$ por cada fila de la matriz $x^{D}$, ambas mostradas en la subsección anterior. A cada iteración de la matriz izquierda se desplazará una posición a la derecha en la matriz $out^{D}$. Sin embargo, primero es conveniente almacenar los valores disperos de la matriz $w^{d}$. Para esto, se puede construir una \acrshort{lut} (\textit{\acrlong{lut}}). En esta tabla se almacenan contiguos en memoria cada uno de los valores \textit{nonzero} de la matriz $w^{d}$ recorrida en orden secuencial estilo C. Para este ejemplo, el contenido de la \acrshort{lut} se puede ver en la Tabla \ref{tab:lut_example}. En la columna izquierda puede verse la coordenada original del valor ubicado en la posición a su derecha.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|}
+    \hline
+    \textbf{(x$^{\sharp}$,y$^{\flat}$)} & \textbf{pos$^{\natural}$} \\\hline
+    (0,0) & 0 \\\hline
+    (0,1) & 1 \\\hline
+    (1,1) & 2 \\\hline
+    (3,0) & 3 \\\hline
+    (3,1) & 4 \\\hline
+    \end{tabular}
+    \caption{Contenido de la LUT para la matriz $w^{d}$. \textbf{x}, \textbf{y} y \textbf{pos} se etiquetan con $\sharp$, {\large$\flat$} y $\natural$}
+    \label{tab:lut_example}
+\end{table}
+
+A su vez, en la Tabla \ref{tab:w_matrix_memory_layout} se puede ver la disposición en memoria de cada valor \textit{nonzero} de la matriz dispersa de pesos.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        \textbf{pos} & 0 & 1 & 2 & 3 & 4 \\\hline
+        \textbf{val} & $w_{00}$ & $w_{01}$ & $w_{11}$ & $w_{30}$ & $w_{31}$ \\\hline
+    \end{tabular}
+    \caption{Disposición en memoria de los valores \textit{nonzero} de la matriz $w^{d}$}
+    \label{tab:w_matrix_memory_layout}
+\end{table}
+
+Como el almacenamiento de matrices en estilo C es por filas, se pueden tomar punteros al inicio de cada una de las filas en las matrices $x^{D}$ y $out^{D}$ y repetir esta secuencia $k$ veces. Es importante recordar que aunque los accesos a la matriz $w^{d}$ sean aleatorios, sus valores son accedidos secuencialmente. De esta forma, se recorre cada una de las entradas de la \acrshort{lut}, tomando cada índice etiquetado con $\sharp$, $\flat$ y $\natural$ en la Tabla \ref{tab:lut_example} tal como se indica a continuación:
+
+\begin{center}
+    $out = base\_out + m*num\_iteracion$\\
+    $D = base\_D + n*num\_iteracion$\\
+    \ \\
+    \ \ \ \ \ \  $\sharp$ \ \ \ \ \ \ \ \ \ \ \ \ \  $\natural$ \ \ \ \ \ \ \ \  {\large$\flat$} \ \\
+    $out[0] \pluseq w[0] \cdot D[0]$\\
+    $out[0] \pluseq w[1] \cdot D[1]$\\
+    $out[1] \pluseq w[2] \cdot D[1]$\\
+    $out[3] \pluseq w[3] \cdot D[0]$\\
+    $out[3] \pluseq w[4] \cdot D[1]$\\
+\end{center}
 
 \section{TensorFlow}
 \label{sec:tensorflow}
