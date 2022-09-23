@@ -223,7 +223,7 @@ Esta secuencia \textit{hardcodeada} se repetirá $k$ veces, (el número columnas
 \label{ssec:teoria_ventajas_localidad}
 Teniendo en cuenta que, para la matriz de pesos dispersa, sus valores \textit{nonzero} pueden almacenarse en memoria de forma secuencial, y recordando la propiedad asociativa de la suma, se puede conseguir un algoritmo de multiplicación de matrices que únicamente realice accesos por filas. Al fin y al cabo todo se reduce a cómo se representan las matrices en memoria.
 
-Por tanto, para una multiplicación de matrices similar a la tratada en esta misma sección ($w^{d} \times x^{D} = out^{D}$, de dimensiones $m \times n$, $n \times k$ y $m \times k$), se puede representar la dimensión común de medida $n$ en el eje horizontal. Como se puede apreciar, la siguiente multiplicación de matrices no está en una disposición compatible, pero tenerlas en este \textit{layout} en memoria es muy beneficioso: 
+Por tanto, para una multiplicación de matrices similar a la tratada en esta misma sección ($w^{d} \times x^{D} = out^{D}$, de dimensiones $m \times n$, $n \times k$ y $m \times k$), se puede representar la dimensión común de medida $n$ en el eje horizontal. La siguiente multiplicación de matrices no está en una disposición compatible, pero tal como se puede apreciar en la subsección a continuación, tenerlas en este \textit{layout} en memoria es muy beneficioso para la localidad de los datos: 
 \begin{gather}
     \begin{pmatrix}
         w_{00} & w_{01}\\
@@ -292,4 +292,8 @@ Como el almacenamiento de matrices en estilo C es por filas, se pueden tomar pun
 
 \section{TensorFlow}
 \label{sec:tensorflow}
-Hablar de TensorFlow, y añadir sección explicando la arquitectura point to point.
+Por último en este capítulo conviene hablar de \acrlong{tf}, la librería empleada para la creación del modelo en Python, en el que suele importarse como \acrshort{tf}, y que permite omitir todos los detalles de implementación en el proceso de entrenamiento.
+
+\acrlong{tf} es una de las librerías de código abierto más ampliamente empleadas en la industria. Creada por Google para el desarrollo de modelos de aprendizaje automático,expone \acrshort{api}s para Python, C++ y múltiples otros lenguajes. \acrlong{tf} permite la ejecución de código en CPU, GPU y TPU y, además, debido a su naturaleza \textit{open source} está abierta a modificaciones que implementen \textit{\gls{backend}s} de hardware XPU específicos.
+
+Al ser una librería tan grande, conocida y predominante en la industria, se pueden encontrar gran cantidad de redes neuronales preentrenadas, fácilmente importables a \acrlong{tf}, en formatos tales como \texttt{.onnx}, \texttt{.pb} o \texttt{.npz}, en proyectos como el \textit{ONNX Model Zoo}\footnote{\url{https://github.com/onnx/models}}.

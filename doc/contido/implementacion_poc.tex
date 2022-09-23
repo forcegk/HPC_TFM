@@ -7,7 +7,7 @@
 
 \section{Objetivos de la Prueba de Concepto}
 \label{sec:objetivos_poc}
-El objetivo de esta Prueba de Concepto es implementar una red neuronal para la posterior medida de su rendimiento y perfilado. Sin embargo, dado que uno de los \textit{frameworks} predominantes en la industria es \acrlong{tf}, tal como se comenta en la Sección \ref{} \textbf{TODO REF}, se han decidido desarrollar las redes neuronales mediante este \textit{framework}, ahorrando toda la implementación del entrenamiento (que no concierne a este trabajo). Esto permite no solo investigar acerca de la implementación a bajo nivel de esta librería, sino además comparar los resultados que arroja la implementación de la \acrshort{poc} con los de dicha librería, verificando así que el programa sea correcto.
+El objetivo de esta Prueba de Concepto es implementar una red neuronal para la posterior medida de su rendimiento y perfilado. Sin embargo, dado que uno de los \textit{frameworks} predominantes en la industria es \acrlong{tf}, tal como se comenta en la Sección \ref{sec:tensorflow}, se han decidido desarrollar las redes neuronales mediante este \textit{framework}, ahorrando toda la implementación del entrenamiento (que no concierne a este trabajo). Esto permite no solo investigar acerca de la implementación a bajo nivel de esta librería, sino además comparar los resultados que arroja la implementación de la \acrshort{poc} con los de dicha librería, verificando así que el programa sea correcto.
 
 Por último, el uso de \acrlong{tf} también es necesario para el podado de redes neuronales, donde es importante que la forma de las matrices sea algo extrapolable a una red neuronal real.
 
@@ -17,13 +17,13 @@ A pesar de que el perfilado de un código \textit{machine learning} y extracció
 
 \section{Extracción de valores para modelos TensorFlow}
 \label{sec:extraccion_valores_modelo_tf}
-El primer paso para la implementación de esta \acrshort{poc} es la extracción de los valores desde el modelo TensorFlow. Este modelo puede venir dado previamente en formato \texttt{.pb} (formato de archivo que emplea \acrlong{tf} en el que viene definida la arquitectura de red, así como los valores de los pesos, \textit{bias}, etc), o se puede crear y entrenar directamente desde Python sin importarlo u exportarlo en ningún momento.
+El primer paso para la implementación de esta \acrshort{poc} es la extracción de los valores desde el modelo \acrlong{tf}. Este modelo puede venir dado previamente en formato \texttt{.pb} (formato de archivo que emplea \acrlong{tf} en el que viene definida la arquitectura de red, así como los valores de los pesos, \textit{bias}, etc), o se puede crear y entrenar directamente desde Python sin importarlo u exportarlo en ningún momento.
 
-Como los modelos más grandes y complejos no suelen ser modelos exclusivamente \textit{feed-forward} con funciones de activación exclusivamente sigmoides (\textbf{TODO REF SECCION 2}), lo más cómodo es simplemente generar una red neuronal de pruebas, entrenarla, y exportar el resultado a C.
+Como los modelos más grandes y complejos, como los que se pueden encontrar en la \textit{ONNX Model Zoo} (Sección \ref{sec:tensorflow}), no suelen ser modelos exclusivamente \textit{feed-forward} con funciones de activación exclusivamente sigmoides, lo más cómodo es simplemente generar una red neuronal de pruebas, entrenarla, y exportar el resultado a C.
 
 \subsection{Desde un modelo guardado}
 \label{ssec:desde_modelo_guardado}
-Para realizar esto, que queda fuera del objetivo de este trabajo, bastaría con emplear la función \texttt{saved\_model.load} de TensorFlow sobre un modelo \texttt{.pb} previamente exportado \cite{tensorflow_saved_model}. Esto permitiría importar grandes modelos preentrenados y realizar mediciones sobre modelos ``del mundo real'', pero implicaría una gran cantidad de horas de trabajo y adaptación, debido a la gran cantidad de parámetros, tipos de capas y funciones de activación, entre otros, que no se han implementado.
+Para realizar esto, que queda fuera del objetivo de este trabajo, bastaría con emplear la función \texttt{saved\_model.load} de \acrlong{tf} sobre un modelo \texttt{.pb} previamente exportado \cite{tensorflow_saved_model}. Esto permitiría importar grandes modelos preentrenados y realizar mediciones sobre modelos ``del mundo real'', pero implicaría una gran cantidad de horas de trabajo y adaptación, debido a la gran cantidad de parámetros, tipos de capas y funciones de activación, entre otros, que no se han implementado.
 
 Por esta razón, este proyecto se limita a la extracción para modelos puramente \textit{feed-forward} con función de activación sigmoide (a pesar de que añadir soporte para distintas funciones de activación sería relativamente sencillo de implementar).
 
@@ -242,7 +242,7 @@ Como se puede apreciar dentro de las zonas recortadas, la mayor parte de datos s
 
 \section{Importación de valores en C}
 \label{sec:importacion_valores_c}
-En esta sección se describe cómo se importan los datos extraídos de los modelos \acrshort{tf} densos o dispersos, creados en la sección anterior.
+En esta sección se describe cómo se importan los datos extraídos de los modelos \acrlong{tf} densos o dispersos, creados en la sección anterior.
 
 \subsection{Importación de matrices densas}
 \label{ssec:importacion_matrices_densas}
@@ -499,7 +499,7 @@ map_and_bias__fp32(layer3_out, layer3_bias, LAYER3_SIZE, input_dim,
 
 \section{Posibilidades de la generación de código}
 \label{sec:posibilidades_de_la_generacion_de_codigo}
-Las posibilidades de esta aproximación al análisis y medida del rendimiento son muchas. Generar código C a partir de un modelo que precisa de soporte en Python es algo especialmente útil para sistemas sin dicho soporte. Es cierto que existe TensorFlow Lite para sistemas embebidos, pero la flexibilidad que aporta crear un código C y la posibilidad de paralelizar tanto en memoria compartida como distribuida dicho código son motivos de peso.
+Las posibilidades de esta aproximación al análisis y medida del rendimiento son muchas. Generar código C a partir de un modelo que precisa de soporte en Python es algo especialmente útil para sistemas sin dicho soporte. Es cierto que existe \acrlong{tf} Lite para sistemas embebidos, pero la flexibilidad que aporta crear un código C y la posibilidad de paralelizar tanto en memoria compartida como distribuida dicho código son motivos de peso.
 
 En conjunción con todo esto, el hecho de emplear matrices dispersas viene no solamente condicionado por la literatura ya existente, que destaca los beneficios en cuanto a la proporción rendimiento/precisión de redes podadas, sino que viene también motivada por las labores de investigación en cuanto a análisis estático de código y empaquetamiento de operandos para vectorización conducidas en \cite{custom_high_performance_vector_codegen_sparse_computations}.
 
@@ -541,6 +541,6 @@ Si bien conseguir una buena arquitectura no es trivial, sabiendo que es posible 
 \label{sssec:heterogeneas_asic}
 El siguiente paso en el aumento de rendimiento (absoluto o por unidad de energía) es recurrir a circuitos de aplicación específica, \acrshort{asic}s (\textit{\acrlong{asic}s}). Con el término \acrshort{asic} se engloba no solo a los chips diseñados de cero con una finalidad, sino también a los procesadores de aplicación específica o \acrshort{asip}s (\textit{\acrlong{asip}s}). Estos circuitos programados en una \acrshort{isa} (\textit{\acrlong{isa}}) específica y adaptada a las necesidades de la carga de trabajo, o directamente diseñados en un lenguaje de diseño hardware como VHDL o Verilog, permiten ese extra de eficiencia necesario en sistemas embebidos o de muy alta replicación y, por tanto, muy alto consumo agregado.
 
-Como se puede imaginar, si bien difícil, no es imposible implementar un \textit{\gls{backend}} que exporte modelos \acrlong{tf} a VHDL o Verilog para generación de \acrshort{asic}s. Tampoco debería ser particularmente difícil compilar código C para \acrshort{asip}s, puesto que el código de multiplicación de matrices dispersas se puede reducir a una secuencia finita de operaciones \acrshort{fma} (\textit{\acrlong{fma}})  \textbf{TODO REFERENCIAR A CONCEPTOS BÁSICOS}. Las optimizaciones, sin embargo, deberían venir de cómo se implementa el producto de matrices y otras operaciones relevantes como la función de transferencia.
+Como se puede imaginar, si bien difícil, no es imposible implementar un \textit{\gls{backend}} que exporte modelos \acrlong{tf} a VHDL o Verilog para generación de \acrshort{asic}s. Tampoco debería ser particularmente difícil compilar código C para \acrshort{asip}s, puesto que el código de multiplicación de matrices dispersas se puede reducir a una secuencia finita de operaciones \acrshort{fma} (\textit{\acrlong{fma}}) (Sección \ref{sec:multiplicacion_point_to_point}). Las optimizaciones, sin embargo, deberían venir de cómo se implementa el producto de matrices y otras operaciones relevantes como la función de transferencia.
 
 Por último, en estos sistemas embebidos podría ser posible emplear otras técnicas de bajo nivel, imposibles de ejecutar en un ordenador convencional debido a la naturaleza de un sistema operativo, tales como permitir cierta tasa de error en los accesos a memoria a cambio de una reducción en el voltaje operativo de la misma (ver Subsección \ref{ssec:otras_optimizaciones}).
