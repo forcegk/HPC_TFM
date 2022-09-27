@@ -36,14 +36,14 @@ Este es el camino más sencillo a la hora de implementar lo que, recordemos, es 
 A continuación se muestran, por orden de aparición en el \textit{notebook}, los pasos de entrenamiento de la red.
 
 \begin{enumerate}
-    \item Se importa el conjunto de datos. En este caso se ha empleado el \textit{dataset} \texttt{german\_credit\_numeric}, debido a la simplicidad de sus entradas y salidas, así como por los numerosos ejemplos disponibles para este. Este conjunto de datos cuenta con 1000 datos de entrada de 24 parámetros numéricos cada uno, y se emplea para intentar parametrizar el riesgo crediticio de un individuo mediante redes neuronales.\medskip
+    \item Se importa el conjunto de datos. En este caso se ha empleado el \textit{dataset} \texttt{german\_credit\_numeric}, debido a la simplicidad de sus entradas y salidas, así como por los numerosos ejemplos disponibles para este. Este conjunto de datos cuenta con 1000 datos de entrada de 24 parámetros numéricos cada uno, y se emplea para intentar parametrizar el riesgo crediticio de un individuo mediante redes neuronales:\medskip
 \begin{lstlisting}[language=Python]
 ds = tfds.load('german_credit_numeric', split='train', as_supervised=True)
 \end{lstlisting}
 
     \item Se indican la función de pérdida, el optimizador y la métrica. Esto, si bien sería un tema muy interesante si este trabajo tratase de obtener buenos resultados con esta red, en este caso es irrelevante que la arquitectura de la red sea buena o no, así como la calidad de su entrenamiento y resultados.
 
-    \item Se crea un modelo secuencial, es decir, un modelo ``capa por capa'', en el que cada capa va a continuación de la siguiente. Tras crearlo se \textit{buildea} (\texttt{model.build()}) y se compila.\medskip
+    \item Se crea un modelo secuencial, es decir, un modelo ``capa por capa'', en el que cada capa va a continuación de la siguiente. Tras crearlo se \textit{buildea} (\texttt{model.build()}) y se compila:\medskip
 \begin{lstlisting}[language=Python]
 model = tf.keras.models.Sequential(name= "MySampleModel")
 model.add(tf.keras.layers.InputLayer((tamano_entrada,)))
@@ -56,7 +56,7 @@ model.build()
 model.compile(loss=fn_perdida, optimizer=optimizador, metrics=metrica)
 \end{lstlisting}
 
-    \item Tras la creación del modelo hay que entrenarlo. Este complejo proceso a nivel de implementación, basado en el algoritmo de \textit{backpropagation}, y con todos los detalles que este implica, se puede realizar en, al más puro estilo Python, con un \textit{one-liner}.\medskip
+    \item Tras la creación del modelo hay que entrenarlo. Este complejo proceso a nivel de implementación, basado en el algoritmo de \textit{backpropagation}, y con todos los detalles que este implica, se puede realizar en, al más puro estilo Python, con un \textit{one-liner}:\medskip
 \begin{lstlisting}[language=Python]
 history =  model.fit(x=lote_entrenamiento[0], y = lote_entrenamiento[1], batch_size = 20, epochs=num_epochs)
 \end{lstlisting}
@@ -66,7 +66,7 @@ history =  model.fit(x=lote_entrenamiento[0], y = lote_entrenamiento[1], batch_s
 \label{sssec:modelo_pruebas_fase_podado}
 En caso de querer podar la red para aumentar su \textit{sparsity}, el procedimiento es muy similar al descrito en \cite{tensorflow_prune_model}. Los pasos para realizar este procedimiento se describen a continuación:
 \begin{enumerate}
-    \item Se crean los parámetros para podar el modelo hasta una \textit{sparsity} en este caso del 80\%. Previo al podado se copia el modelo original a un modelo diferente, \texttt{model\_for\_pruning}.\medskip
+    \item Se crean los parámetros para podar el modelo hasta una \textit{sparsity} en este caso del 80\%. Previo al podado se copia el modelo original a un modelo diferente, \texttt{model\_for\_pruning}:\medskip
 \begin{lstlisting}[language=Python]
 prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
@@ -97,7 +97,7 @@ model_for_pruning.compile(optimizer=optimizador, # 'adam',
 
 model_for_pruning.summary()
 \end{lstlisting}
-    \item Se entrena el modelo podado. Este procedimiento es muy similar al entrenamiento en una línea explicado previamente, únicamente añadiendo el \textit{callback} necesario para el entrenamiento de un modelo podado.
+    \item Se entrena el modelo podado. Este procedimiento es muy similar al entrenamiento en una línea explicado previamente, únicamente añadiendo el \textit{callback} necesario para el entrenamiento de un modelo podado:\medskip
 \begin{lstlisting}[language=Python]
 num_epochs =  500
 
@@ -115,7 +115,7 @@ history.history
 Ahora que se cuenta con un modelo de red neuronal de discutible calidad, pero funcionalmente idéntico a otro mejor adaptado al problema a resolver, se puede comenzar con la extracción de valores de cada capa.
 
 \begin{enumerate}
-    \item Primero es necesario obtener tanto los pesos como los \textit{bias}. Para esto se itera sobre las capas del modelo. En cada capa del modelo se puede llamar a la función \texttt{get\_weights()}. En el resultado que devuelve, los pesos se encuentran en un array de arrays en la posición 0, y los \textit{bias} un array en la posición 1.\medskip
+    \item Primero es necesario obtener tanto los pesos como los \textit{bias}. Para esto se itera sobre las capas del modelo. En cada capa del modelo se puede llamar a la función \texttt{get\_weights()}. En el resultado que devuelve, los pesos se encuentran en un array de arrays en la posición 0, y los \textit{bias} un array en la posición 1:\medskip
 \begin{lstlisting}[language=Python]
 for layer in model.layers:
     print(f"LAYER{idx}_WEIGHTS:")
@@ -186,7 +186,7 @@ def np_array_to_hex(array, byte_format):
 # 3faa3dad
 \end{lstlisting}
 
-    \item Por último, pero no por ello menos importante, se han de exportar también los datos de entrada del propio dataset. Como se discutirá más adelante, el formato del documento que lee el código C compilado contará con una primera línea especificando el número de líneas que va a leer, y un dato por línea. De esta forma, si la entrada contiene inferir 1000 datos, el contenido del documento será de 1001 líneas, siendo la primera \texttt{1000}, y el resto conteniendo los datos a inferir.\medskip
+    \item Por último, pero no por ello menos importante, se han de exportar también los datos de entrada del propio dataset. Como se discutirá más adelante, el formato del documento que lee el código C compilado contará con una primera línea especificando el número de líneas que va a leer, y un dato por línea. De esta forma, si la entrada contiene inferir 1000 datos, el contenido del documento será de 1001 líneas, siendo la primera \texttt{1000}, y el resto conteniendo los datos a inferir:\medskip
 \begin{lstlisting}[language=Python]
 # Get original stdout here, in order to print to a file
 my_stdout = sys.stdout
@@ -201,7 +201,7 @@ with open('input.txt', 'w') as f:
     # Finally restore stdout
     sys.stdout = my_stdout
 \end{lstlisting}
-    Al ejecutar el código anterior, se crea en el directorio de trabajo el fichero \texttt{input.txt}, que contiene un total de 1000 entradas en este caso. Para este ejemplo, el fichero se ha recortado a 5 entradas por conveniencia.\medskip
+    Al ejecutar el código anterior, se crea en el directorio de trabajo el fichero \texttt{input.txt}, que contiene un total de 1000 entradas en este caso. Para este ejemplo, el fichero se ha recortado a 5 entradas por conveniencia:\medskip
 \begin{lstlisting}
 5
 3,6,4,13,2,5,1,4,3,28,3,2,2,2,1,1,0,1,0,0,1,0,0,1
@@ -327,7 +327,6 @@ fp32:fast_sigmoid__fp32, \
 fp64:fast_sigmoid__fp64 \
 )(X)
 
-#pragma inline fast_sigmoid__fp32, fast_sigmoid__fp64
 fp32 fast_sigmoid__fp32(fp32);
 fp64 fast_sigmoid__fp64(fp64);
 \end{lstlisting}
@@ -373,7 +372,7 @@ for(int i = 0; i < INPUT_SIZE * input_dim; i++){
 fclose(inputfile);
 \end{lstlisting}
 
-    \item Para realizar la multiplicación de matrices, y siguiendo con este ejemplo, se emplea la función \texttt{cblas\_sgemm}. Esta función realiza un producto de matrices ampliado tal que $C = \alpha AB + \beta C$. El resultado se guarda de forma aditiva sobre $C$, por lo que es necesario que o bien dicha matriz esté a cero, o el factor $\beta$ sea cero.\medskip
+    \item Para realizar la multiplicación de matrices, y siguiendo con este ejemplo, se emplea la función \texttt{cblas\_sgemm}. Esta función realiza un producto de matrices ampliado tal que $C = \alpha AB + \beta C$. El resultado se guarda de forma aditiva sobre $C$, por lo que es necesario que o bien dicha matriz esté a cero, o el factor $\beta$ sea cero:\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** SGEMM %s x %s ***\n", "layer0", "layer1");
 cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, input_dim,
@@ -382,7 +381,7 @@ cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, input_dim,
             0.f, (float *) layer1_out, LAYER1_SIZE);
 \end{lstlisting}
 
-    Tras la multiplicación de $A$ por $B$, aditiva sobre $C$, se han de aplicar los \textit{bias} y la función de transferencia. Esto se realia con una función ad-hoc que combina ambas acciones en un solo recorrido lineal por memoria: \texttt{map\_and\_bias}.
+    Tras la multiplicación de $A$ por $B$, aditiva sobre $C$, se han de aplicar los \textit{bias} y la función de transferencia. Esto se realia con una función ad-hoc que combina ambas acciones en un solo recorrido lineal por memoria: \texttt{map\_and\_bias}:\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** Map and Bias %s with %s function ***\n", "layer1_out", "sigmoid__fp32");
 map_and_bias__fp32(layer1_out, layer1_bias, input_dim, LAYER1_SIZE, 'N', sigmoid__fp32);
@@ -390,7 +389,7 @@ map_and_bias__fp32(layer1_out, layer1_bias, input_dim, LAYER1_SIZE, 'N', sigmoid
 
     Si bien es cierto que en lugar de aplicar los \textit{bias} junto a la función de transferencia en la función previa, es posible realizar $C = AB + bias$, con una copia de \textit{bias} por fila, es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia, ya que así se obtiene una mayor intensidad aritmética. Esta mayor intensidad aritmética es especialmente relevante cuando una función se paraleliza, ya que lo más probable es que \texttt{map\_and\_bias} sea \textit{memory-bound} en mayor o menor medida en función de la función de transferencia. Además, si se realizara operación sobre una matriz pre-inicializada con los \textit{bias} en cada fila, se necesitaría replicar los valores de \textit{bias} \texttt{input\_dim}\footnote{Se denomina \texttt{input\_dim} al número de filas de la entrada, es decir, el número de datos multidimensionales que entran a la red.} veces, replicación que no es gratuita.
 
-    Una implementación básica de \texttt{map\_and\_bias} es similar a la siguiente:
+    Una implementación básica de \texttt{map\_and\_bias} es similar a la siguiente:\medskip
 \begin{lstlisting}[language=C]
 void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint32_t M, const uint32_t N, fp32 (* map_function)(fp32 x)){
     for (uint32_t i = 0; i < M; i++){
@@ -404,8 +403,7 @@ void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint3
 
     \item Tras repetir el paso anterior tantas veces como capas tenga la arquitectura, la salida de cada capa \texttt{M} de la red se puede encontrar en \texttt{layerM\_out}, pudiéndose encontrar la salida de la red en la matriz \texttt{layerN\_out} para una red de \texttt{N} capas. Estos datos pueden ser exportados, mostrados, contados, posprocesados, etc. Como en este caso interesa perfilar y visualizar las características del \texttt{workload}, lo más lógico es primero probar con una cantidad reducida de datos para verificar el correcto funcionamiento del código generado.
     
-    Tras verificar el correcto funcionamiento de la red, y observar que para las implementaciones con \texttt{OpenBLAS} y \texttt{librsb}, los resultados son exactamente iguales a los proporcionados por \texttt{numpy}, se añade un pequeño resumen de ejecución, que clasifica el número de predicciones mayores o menores a 0,5. Esto es realmente útil para comparar la validez de los resultados con respecto a \acrlong{tf} de forma rápida.
-
+    Tras verificar el correcto funcionamiento de la red, y observar que para las implementaciones con \texttt{OpenBLAS} y \texttt{librsb}, los resultados son exactamente iguales a los proporcionados por \texttt{numpy}, se añade un pequeño resumen de ejecución, que clasifica el número de predicciones mayores o menores a 0,5. Esto es realmente útil para comparar la validez de los resultados con respecto a \acrlong{tf} de forma rápida:\medskip
 \begin{lstlisting}[language=C]
 printf("\n\n--- SUMMARY ---\n");
 printf(" - Batch size = %d\n", input_dim);
@@ -424,14 +422,14 @@ Una vez detallado cómo se procede con matrices de pesos densas, y según lo vis
 \begin{enumerate}
     \item Transponer la entrada y salida.
     \item Ajustar los parámetros de las funciones densas.
-    \item Sustituir las matrices de pesos densas por disperspasp.
+    \item Sustituir las matrices de pesos densas por dispersas.
     \item Sustituir las funciones densas por sus equivalentes dispersas.
 \end{enumerate}
 
 Para realizar estos pasos primero se necesita una librería \acrshort{blas} que soporte matrices dispersas y que exponga una cabecera para C. A ser posible, y como en cualquier proyecto, es conveniente que una dependencia \textit{core}, como lo es la librería de multiplicación de matrices en este caso, sea moderadamente conocida, dado que ello asegurará una mayor calidad del código interno, así como un mejor soporte. Cumpliendo estos requerimientos, se ha optado por la utilización de la librería \texttt{librsb}\footnote{Página principal \url{http://librsb.sourceforge.net}, con paquete en el AUR (ArchLinux User Repository) \url{https://aur.archlinux.org/packages/librsb}, así como parquete mantenido en Ubuntu \url{https://packages.ubuntu.com/jammy/librsb-dev}}, de la cual se emplea su interfaz \textit{Sparse BLAS}. De esta forma, los pasos para adaptar el código para trabajar con matrices de pesos dispersos son:
 
 \begin{enumerate}
-    \item Para transponer las matrices de entrada y de salida se emplea una función \textit{built-in} de OpenBLAS, por lo que en este aspecto el código está ligado a dicha librería. De todos modos, no parece una dependencia muy complicada de sobrellevar, puesto que esta implementación es muy habitual en la industria, y aún por encima es una función que solo se usará en esta prueba de concepto. A continuación se muestra cómo transponer la entrada. Para transponer la salida se procede de forma análoga, como se muestra más adelante.\medskip
+    \item Para transponer las matrices de entrada y de salida se emplea una función \textit{built-in} de OpenBLAS, por lo que en este aspecto el código está ligado a dicha librería. De todos modos, no parece una dependencia muy complicada de sobrellevar, puesto que esta implementación es muy habitual en la industria, y aún por encima es una función que solo se usará en esta prueba de concepto. A continuación se muestra cómo transponer la entrada (para transponer la salida se procede de forma análoga, como se muestra más adelante):\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** Transposing input out-of-place ***\n");
 cblas_somatcopy(CblasRowMajor, CblasTrans, input_dim, LAYER0_SIZE, 1.f, (float *) input, LAYER0_SIZE, (float *) temp_input, input_dim);
@@ -473,7 +471,7 @@ void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint3
 
     \item El siguiente paso es sustituir las matrices de pesos densas por matrices de pesos dispersas. Para esto se emplea el mismo método de \textit{hardcodeo} de datos en la Subsección \ref{ssec:importacion_matrices_dispersas} mediante el uso de \texttt{\#define}. De esta forma, lo que previamente sería \texttt{layerN\_weights}, y una \textit{string} de datos binaros a continuación, se divide ahora en \texttt{layerN\_sp\_weights} (\textit{layerN sparse weights}, que contiene los valores distintos de cero para la matriz de pesos dispersa), así como en dos vectores de coordenadas \texttt{layerN\_i} y \texttt{layerN\_j}.
     
-    Estos datos son necesarios para la creación de las matrices dispersas, indicando \texttt{layerN\_i} y \texttt{layerN\_j} la fila y la columna de cada valor en el array de pesos, respectivamente. Además, también es necesario el número de \textit{nonzeros} (\texttt{layerN\_nz}) para la creaación de dichas matrices. Sabiendo esto, las matrices dispersas se crean de la siguiente manera:
+    Estos datos son necesarios para la creación de las matrices dispersas, indicando \texttt{layerN\_i} y \texttt{layerN\_j} la fila y la columna de cada valor en el array de pesos, respectivamente. Además, también es necesario el número de \textit{nonzeros} (\texttt{layerN\_nz}) para la creaación de dichas matrices. Sabiendo esto, las matrices dispersas se crean de la siguiente manera:\medskip
 \begin{lstlisting}[language=C]
 blas_sparse_matrix layer1_sp_weights = blas_invalid_handle;
 /* [...] */
@@ -484,7 +482,7 @@ BLAS_suscr_insert_entries(layer1_sp_weights, layer1_nz, (float *)
 BLAS_suscr_end(layer1_sp_weights);
 \end{lstlisting}
 
-    \item Finalmente, queda emplear las funciones adecuadas para la mutiplicación de matrices $d\times D$. Este proceso consiste básicamente en sustituir la función \texttt{[sdcz]gemm} por una función \texttt{[sdcz]usmm} (Subsección \ref{ssec:propiedades_producto_matrices_dispersas}), así como indicar a \texttt{map\_and\_bias} que la matriz de resultados se encuentra transpuesta. Los valores de $M$ y $N$ de la matriz original no transpuesta \texttt{C}, también deben intercambiarse.
+    \item Finalmente, queda emplear las funciones adecuadas para la mutiplicación de matrices $d\times D$. Este proceso consiste básicamente en sustituir la función \texttt{[sdcz]gemm} por una función \texttt{[sdcz]usmm} (Subsección \ref{ssec:propiedades_producto_matrices_dispersas}), así como indicar a \texttt{map\_and\_bias} que la matriz de resultados se encuentra transpuesta. Los valores de $M$ y $N$ de la matriz original no transpuesta \texttt{C}, también deben intercambiarse:\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** SUSMM %s(T) x %s(T) ***\n", "layer3", "layer2");
 BLAS_susmm(blas_rowmajor, blas_trans, input_dim, 1.f, layer3_sp_weights,

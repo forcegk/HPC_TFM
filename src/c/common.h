@@ -24,11 +24,9 @@ typedef union _fp64 {
 // fp64:fast_sigmoid__fp64 \
 // )(X)
 
-// #pragma inline fast_sigmoid__fp32, fast_sigmoid__fp64  // not working with gcc, incompatible with icc
 fp32 fast_sigmoid__fp32(fp32);
 fp64 fast_sigmoid__fp64(fp64);
 
-// #pragma inline sigmoid__fp32, sigmoid__fp64
 fp32 sigmoid__fp32(fp32);
 fp64 sigmoid__fp64(fp64);
 
