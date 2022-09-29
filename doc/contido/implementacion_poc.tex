@@ -7,13 +7,11 @@
 
 \section{Objetivos de la Prueba de Concepto}
 \label{sec:objetivos_poc}
-El objetivo de esta Prueba de Concepto es implementar una red neuronal para la posterior medida de su rendimiento y perfilado. Sin embargo, dado que uno de los \textit{frameworks} predominantes en la industria es \acrlong{tf}, tal como se comenta en la Sección \ref{sec:tensorflow}, se han decidido desarrollar las redes neuronales mediante este \textit{framework}, ahorrando toda la implementación del entrenamiento (que no concierne a este trabajo). Esto permite no solo investigar acerca de la implementación a bajo nivel de esta librería, sino además comparar los resultados que arroja la implementación de la \acrshort{poc} con los de dicha librería, verificando así que el programa sea correcto.
-
-Por último, el uso de \acrlong{tf} también es necesario para el podado de redes neuronales, donde es importante que la forma de las matrices sea algo extrapolable a una red neuronal real.
+El objetivo de esta Prueba de Concepto es implementar una red neuronal para la posterior medida de su rendimiento y perfilado. Sin embargo, dado que uno de los \textit{frameworks} predominantes en la industria es \acrlong{tf}, tal como se comenta en la Sección \ref{sec:tensorflow}, se han decidido desarrollar las redes neuronales mediante este \textit{framework}, ahorrando toda la implementación del entrenamiento (que no concierne a este trabajo). Esto permite no solo investigar acerca de la implementación a bajo nivel de esta librería, sino además comparar los resultados que arroja la implementación de la \acrshort{poc} con los de dicha librería, verificando así que el programa sea correcto. Por último, el uso de \acrlong{tf} también es necesario para el podado de redes neuronales, donde es importante que la forma de las matrices sea algo extrapolable a una red neuronal real.
 
 Para cumplir estos objetivos se crea un \textit{Jupyter Notebook} en el cual se pueden ir ejecutando paso a paso cada etapa en la generación y entrenamiento de la red, así como opcionalmente crear una variante podada del modelo, para finalmente generar código C. Los pasos para la ejecución del programa, así como los conocimientos necesarios para comprender las necesidades del mismo se describen a continuación.
 
-A pesar de que el perfilado de un código \textit{machine learning} y extracción de sus características no precisa de ningún tipo de generación dinámica de código C, se ha decidido realizar esto y no una simple medida de rendimiento en el propio \acrlong{tf} para mejorar los conocimientos y comprensión de estas redes a bajo nivel. Esto, a pesar de que esto pueda mermar la cantidad de arquitecturas de red diferentes que se pueden medir, resulta particularmente útil a la hora de continuar la investigación realizada en redes punto a punto. 
+A pesar de que el perfilado de un código \textit{machine learning} y extracción de sus características no precisa de ningún tipo de generación dinámica de código C, se ha decidido realizar esto y no una simple medida de rendimiento en el propio \acrlong{tf} para mejorar los conocimientos y comprensión de estas redes a bajo nivel. Esto, a pesar de que esto pueda mermar la cantidad de arquitecturas de red diferentes que se pueden medir, resulta particularmente útil a la hora de continuar la investigación realizada en redes con arquitectura punto a punto. 
 
 \section{Extracción de valores para modelos TensorFlow}
 \label{sec:extraccion_valores_modelo_tf}
@@ -333,7 +331,7 @@ fp64 fast_sigmoid__fp64(fp64);
 
 
 \subsection{Matrices densas}
-\label{ssec_gdin_matrices_densas}
+\label{ssec:gdin_matrices_densas}
 La forma más sencilla (y cronológicamente la primera en ser implementada) es la basada en matrices densas. Esta implementación se apoya en la ampliamente disponible librería \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}. A pesar de que el proceso de desarrollo, pruebas, automatización y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.
 
 Tal como se comenta en la Sección \ref{sec:redes_reuronales_densas}, el programa debe hacer lo siguiente:
@@ -416,7 +414,7 @@ printf("\n");
 
 
 \subsection{Matrices dispersas}
-\label{ssec_gdin_matrices_dispersas}
+\label{ssec:gdin_matrices_dispersas}
 Una vez detallado cómo se procede con matrices de pesos densas, y según lo visto en la Sección \ref{sec:redes_reuronales_dispersas}, los pasos a mayores que se deben realizar para implementar una red neuronal basada en matrices dispersas son:
 
 \begin{enumerate}
@@ -495,6 +493,90 @@ map_and_bias__fp32(layer3_out, layer3_bias, LAYER3_SIZE, input_dim,
 \end{lstlisting}
 \end{enumerate}
 
+\subsection{Arquitectura \textit{point-to-point}}
+\label{ssec:gdin_arquitectura_point_to_point}
+Ahora que se ha visto cómo implementar una arquitectura basada en matrices densas, así como adaptarla a matrices dispersas, se procede a explicar cómo se ha implementado la arquitectura \textit{point-to-point}. Para ello, se ha empleado la misma estructura de código que la arquitectura basada en matrices densas, pero empleando secuencias \acrshort{fma} y lógica de punteros, tal como se comenta en la Sección \ref{sec:multiplicacion_point_to_point}. Para realizar esto los pasos a seguir, basándose en la implementación con matrices densas es la siguiente:
+
+\begin{enumerate}
+    \item Implementar la generación de código punto a punto.
+    \item Paralelizar el código generado con OpenMP.
+    \item Aprovechando el uso de OpenMP, se paraleliza también \texttt{map\_and\_bias}.
+\end{enumerate}
+
+Debido a que todas estas funciones son \textit{in-house}, no existe ninguna dependencia más allá de librería matemática y las estándar, así como soporte de OpenMP por parte del compilador. Para proceder con estas modificaciones se realizan los siguientes cambios:
+\begin{enumerate}
+    \item La implementación de la generación de código se realiza en el fichero \texttt{.ipynb} y, tras múltiples optimizaciones en relación al tratamiento de \textit{strings}, se obtiene en un tiempo razonable un código similar al siguiente:\medskip
+\begin{lstlisting}[language=C]
+#pragma omp for
+for(int k = 0; k < input_dim; k++){
+    temp_input = layer0_out + k*LAYER0_SIZE;
+    temp_output = layer1_out + k*LAYER1_SIZE;
+
+    temp_output[0].val += layer1_weights[0].val * temp_input[13].val;
+    temp_output[2].val += layer1_weights[1].val * temp_input[8].val;
+    temp_output[2].val += layer1_weights[2].val * temp_input[22].val;
+    temp_output[3].val += layer1_weights[3].val * temp_input[13].val;
+    temp_output[4].val += layer1_weights[4].val * temp_input[3].val;
+    temp_output[4].val += layer1_weights[5].val * temp_input[5].val;
+}
+\end{lstlisting}
+    \item En el código inmediatamente anterior se realiza la multiplicación y suma de los valores estrictamente necesarios para cada capa, sin realizar ninguna operación innecesaria. Al ser iteraciones independientes sobre cada fila de las matrices de entrada y salida, es muy fácilmente paralelizable con OpenMP. El código de auxiliar a éste es también paralelizado, o ejecutado una sola vez mediante el uso de \texttt{\#pragma omp master} y similares. La implementación de OpenMP se ha realizado además de forma modular, permitiendo que si el código se compila sin soporte de esta librería, el funcionamiento no se vea afectado en absoluto.
+    \item El punto anterior implica también una paralelización de \texttt{map\_and\_bias}. Esto necesita de ciertos cálculos auxiliares. Los cambios a la estructura del código, incluyendo dichos cálculos auxiliares, se resumen a continuación:\medskip
+\begin{lstlisting}[language=C]
+// En la cabecera se añade
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
+
+// Se abre la zona paralela...
+#pragma omp parallel private(temp_input, temp_output)
+{
+// y se realizan cálculos auxiliares para calcular la carga de cada hilo
+#if defined(_OPENMP)
+int num_threads = omp_get_num_threads();
+int thread_id = omp_get_thread_num();
+
+// Se redondea hacia arriba en los n primeros hilos,
+//  tal que n = input_dim % num_threads
+int start = (input_dim / num_threads) * thread_id + ((thread_id < input_dim % num_threads) ? thread_id : input_dim % num_threads);
+int end = (input_dim / num_threads) * (thread_id + 1) + ((thread_id < input_dim % num_threads) ? thread_id + 1 : input_dim % num_threads);
+
+fprintf(stderr, "*** [OpenMP] Thread %d: start = %d, end = %d ***\n", thread_id, start, end);
+#else
+int num_threads = 1;
+int thread_id = 0;
+int start = 0;
+int end = input_dim;
+#endif
+
+#ifdef DEBUG_VERBOSE
+// La información de depuración debe ser impresa solo una vez
+#pragma omp master
+fprintf(stderr, "*** POINT-TO-POINT MATMUL %s x %s ***\n", "layer0", "layer1");
+#endif
+// Y se paraleliza el for como se comenta en el punto 1.
+#pragma omp for
+for(int k = 0; k < input_dim; k++){
+    temp_input = layer0_out + k*LAYER0_SIZE;
+    temp_output = layer1_out + k*LAYER1_SIZE;
+
+    temp_output[0].val += layer1_weights[0].val * temp_input[0].val;
+    //                            [...]
+    temp_output[4].val += layer1_weights[119].val * temp_input[23].val;
+}
+#ifdef DEBUG_VERBOSE
+#pragma omp master
+fprintf(stderr, "*** Map and Bias %s(T) with %s function ***\n", "layer1_out", "sigmoid__fp32");
+#endif
+// Finalmente se paraleliza map_and_bias.
+map_and_bias__fp32(layer1_out+start*LAYER1_SIZE, layer1_bias, end-start, LAYER1_SIZE, 'N', sigmoid__fp32);
+#pragma omp barrier
+
+// Repetir el procedimiento N veces por N capas [...]
+} // #pragma omp parallel
+\end{lstlisting}
+\end{enumerate}
+
 \section{Posibilidades de la generación de código}
 \label{sec:posibilidades_de_la_generacion_de_codigo}
 Las posibilidades de esta aproximación al análisis y medida del rendimiento son muchas. Generar código C a partir de un modelo que precisa de soporte en Python es algo especialmente útil para sistemas sin dicho soporte. Es cierto que existe \acrlong{tf} Lite para sistemas embebidos, pero la flexibilidad que aporta crear un código C y la posibilidad de paralelizar tanto en memoria compartida como distribuida dicho código son motivos de peso.
@@ -507,16 +589,9 @@ A continuación, se mencionan algunas de las posibilidades que abre esta posibil
 \label{ssec:posibilidades_en_computo_generalistas}
 En el mundo de la inteligencia artificial, tanto el entrenamiento como la inferencia de redes neuronales están dominados por las \acrshort{gpu}s (\textit{\acrlong{gpu}s}). Estos dispositivos son muy convenientes para las cargas de trabajo que se manejan en deep learning, y aportan aceleraciones muy significativas sobre su contraparte en CPU. Sin embargo, los principales fabricantes de CPUs están realizando fuertes inversiones en la adaptación de sus arquitecturas tradicionales para la aceleración de \textit{workloads} de \acrshort{ia}. Fabricantes como Intel y AMD, pero también algunos como lo son ARM o Qualcomm investigan para mejorar el rendimiento y, sobre todo en el caso de estos últimos, la eficiencia energética de sus procesadores, donde el elevado consumo de una \acrshort{gpu} no es una opción.
 
-Dada esta situación, y a pesar de que librerías como \texttt{numpy} están altamente optimizadas, es cierto que incorporando la investigación acerca de empaquetamiento de operandos para operaciones con matrices dispersas conducida por Marcos Horro en \cite{horro2022manycore}, es posible que se mejore el rendimiento y consumo energético de una red basada en matrices dispersas en una plataforma de cómputo generalista basada en CPU con extensiones vectoriales (tales como las SSE y AVX\footnote{\url{https://en.wikipedia.org/wiki/Advanced\_Vector\_Extensions}} de Intel, o Neon\footnote{\url{https://developer.arm.com/Architectures/Neon}} de ARM).
+Dada esta situación, y a pesar de que librerías como \texttt{numpy} están altamente optimizadas, es cierto que incorporando la investigación acerca de empaquetamiento de operandos para operaciones con matrices dispersas conducida en \cite{horro2022manycore}, es posible que se mejore el rendimiento y consumo energético de una red basada en matrices dispersas en una plataforma de cómputo generalista basada en CPU con extensiones vectoriales (tales como las SSE y AVX\footnote{\url{https://en.wikipedia.org/wiki/Advanced\_Vector\_Extensions}} de Intel, o Neon\footnote{\url{https://developer.arm.com/Architectures/Neon}} de ARM).
 
 Por esta razón, a pesar de que a día de hoy es difícil mejorar el rendimiento de una red dispersa sin afectar a su precisión, incorporando estas nuevas técnicas se podría obtener o bien una mayor precisión a igualdad de rendimiento, o un mayor rendimiento a igual precisión. Además, esta inferencia podría realizarse en entornos de memoria compartida o distribuida, únicamente alterando el correspondiente \textit{\gls{backend}} 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%    mergear desde aquí
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 \subsection{En plataformas de cómputo heterogéneas}
@@ -539,6 +614,6 @@ Si bien conseguir una buena arquitectura no es trivial, sabiendo que es posible 
 \label{sssec:heterogeneas_asic}
 El siguiente paso en el aumento de rendimiento (absoluto o por unidad de energía) es recurrir a circuitos de aplicación específica, \acrshort{asic}s (\textit{\acrlong{asic}s}). Con el término \acrshort{asic} se engloba no solo a los chips diseñados de cero con una finalidad, sino también a los procesadores de aplicación específica o \acrshort{asip}s (\textit{\acrlong{asip}s}). Estos circuitos programados en una \acrshort{isa} (\textit{\acrlong{isa}}) específica y adaptada a las necesidades de la carga de trabajo, o directamente diseñados en un lenguaje de diseño hardware como VHDL o Verilog, permiten ese extra de eficiencia necesario en sistemas embebidos o de muy alta replicación y, por tanto, muy alto consumo agregado.
 
-Como se puede imaginar, si bien difícil, no es imposible implementar un \textit{\gls{backend}} que exporte modelos \acrlong{tf} a VHDL o Verilog para generación de \acrshort{asic}s. Tampoco debería ser particularmente difícil compilar código C para \acrshort{asip}s, puesto que el código de multiplicación de matrices dispersas se puede reducir a una secuencia finita de operaciones \acrshort{fma} (\textit{\acrlong{fma}}) (Sección \ref{sec:multiplicacion_point_to_point}). Las optimizaciones, sin embargo, deberían venir de cómo se implementa el producto de matrices y otras operaciones relevantes como la función de transferencia.
+Como se puede imaginar, si bien difícil, no es imposible implementar un \textit{\gls{backend}} que exporte modelos \acrlong{tf} a VHDL o Verilog para generación de \acrshort{asic}s. Tampoco debería ser particularmente difícil compilar código C para \acrshort{asip}s, puesto que el código de multiplicación de matrices dispersas se puede reducir a una secuencia finita de operaciones \acrshort{fma} (tal como se explica en la Sección \ref{sec:multiplicacion_point_to_point} y se detalla su implementación en la Subsección \ref{ssec:gdin_arquitectura_point_to_point}). Las optimizaciones, sin embargo, deberían venir de cómo se implementa el producto de matrices en hardware, así como otras operaciones relevantes, como la función de transferencia sigmoide o ReLU.
 
 Por último, en estos sistemas embebidos podría ser posible emplear otras técnicas de bajo nivel, imposibles de ejecutar en un ordenador convencional debido a la naturaleza de un sistema operativo, tales como permitir cierta tasa de error en los accesos a memoria a cambio de una reducción en el voltaje operativo de la misma (ver Subsección \ref{ssec:otras_optimizaciones}).
