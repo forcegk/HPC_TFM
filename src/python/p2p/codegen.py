@@ -1,7 +1,7 @@
 def fn_algebra_ops(args):
     idx, local_layer_lud, MAP_ALGORITHM = args
 
-    local_algebra_ops = [f"#ifdef DEBUG_VERBOSE\n#pragma omp master\n    fprintf(stderr, \"*** POINT-TO-POINT MATMUL %s x %s ***\\n\", \"layer{idx-1}\", \"layer{idx}\");\n#endif"]
+    local_algebra_ops = [f"#ifdef VERBOSE\n#pragma omp master\n{{\n    fprintf(stderr, \"*** [\"BOLDGREEN\"TIME\"RESET\"] POINT-TO-POINT MATMUL %s x %s \", \"layer{idx-1}\", \"layer{idx}\");\n    clock_gettime(CLOCK_MONOTONIC_RAW, &time_start);\n}}\n#endif"]
 
     local_p2p_ops = []
     for x,y in local_layer_lud.keys():
@@ -16,7 +16,8 @@ def fn_algebra_ops(args):
 """)
 
     # Una optimización muy sencilla es meter el free de layer{idx-1} después del sgemm, pero debido a que esto es una poc, no voy a complicarme ahora mismo, a no ser que sea necesario. 
-    local_algebra_ops.append(f"#ifdef DEBUG_VERBOSE\n#pragma omp master\n    fprintf(stderr, \"*** Map and Bias %s(T) with %s function ***\\n\", \"layer{idx}_out\", \"{MAP_ALGORITHM}\");\n#endif\n")
-    local_algebra_ops.append(f"    map_and_bias__fp32(layer{idx}_out+start*LAYER{idx}_SIZE, layer{idx}_bias, end-start, LAYER{idx}_SIZE, 'N', {MAP_ALGORITHM});\n#pragma omp barrier\n\n")
+    local_algebra_ops.append(f"#ifdef VERBOSE\n#pragma omp master\n{{\n    clock_gettime(CLOCK_MONOTONIC_RAW, &time_end);\n    elapsed_us = (time_end.tv_sec - time_start.tv_sec) * 1000000 + (time_end.tv_nsec - time_start.tv_nsec) / 1000;\n    delta_gemm_us += elapsed_us;\n    fprintf(stderr, \"took %d µs ***\\n\", elapsed_us);\n    fprintf(stderr, \"*** [\"BOLDGREEN\"TIME\"RESET\"] Map and Bias %s(T) with %s function \", \"layer{idx}_out\", \"{MAP_ALGORITHM}\");\n    clock_gettime(CLOCK_MONOTONIC_RAW, &time_start);\n}}\n#endif\n")
+    local_algebra_ops.append(f"    map_and_bias__fp32(layer{idx}_out+start*LAYER{idx}_SIZE, layer{idx}_bias, end-start, LAYER{idx}_SIZE, 'N', {MAP_ALGORITHM});\n#pragma omp barrier\n")
+    local_algebra_ops.append(f"#ifdef VERBOSE\n#pragma omp master\n{{\n    clock_gettime(CLOCK_MONOTONIC_RAW, &time_end);\n    elapsed_us = (time_end.tv_sec - time_start.tv_sec) * 1000000 + (time_end.tv_nsec - time_start.tv_nsec) / 1000;\n    delta_map_bias_us += elapsed_us;\n    fprintf(stderr, \"took %d µs ***\\n\", elapsed_us);\n}}\n#endif\n\n")
 
     return "".join(local_algebra_ops)
