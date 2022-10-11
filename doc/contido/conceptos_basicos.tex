@@ -61,7 +61,7 @@ Tras sospechas previas de algunos investigadores como George Cybenko acerca de q
 Como se comenta en la sección anterior, independientemente del número de capas de la red, sea profunda o ``convencional'', una red neuronal densa es aquella en la que para $m$ neuronas en la capa $M$, y $n$ neuronas en la capa $N$, donde la neurona $x$ de la capa $M$ se denota $M_{x}$ existe siempre una conexión de $M_{m}$ a $N_{n}$, es decir ($m\longrightarrow n$):
 
 \begin{equation}
-\forall m \in M \:\wedge\: \forall n \in N, \: m\longrightarrow n
+\forall m \in M \:\wedge\: \forall n \in N, \: m\longrightarrow n\nonumber
 \label{eq:dense_nn}
 \end{equation}
 
@@ -81,7 +81,7 @@ De esta forma, si el dato (vectorial por la naturaleza de estas redes) tiene 24 
 O dicho de otra manera, sea la capa $M_{m}$ una capa completamente conexa con $m$ neuronas, a la cual se le introduce un dato $x_{m}$, donde el peso de la neurona $M_{i}$ hacia $N_{j}$ es denotado por $w_{M,i,j}$, y la función de transferencia es $\phi$, tenemos que la salida de una capa será:
 
 \begin{equation}
-    x_{N,i} = \phi\left(\sum_{j}w_{N,i,j}x_{M,j}\right)
+    x_{N,i} = \phi\left(\sum_{j}w_{N,i,j}x_{M,j}\right)\nonumber
     \label{eq:dense_nn_eq}
 \end{equation}
 
