@@ -57,14 +57,14 @@ Las ejecuciones para medición de tiempos se realizan en la partición \texttt{c
 \centering
 \begin{tabular}{|c|c|}
     \hline
-    CPU & 11th Gen Intel(R) Core(TM) i7-11370H @ 3.3GHz\\\hline
+    CPU & 11th Gen Intel Core i7-11370H (4C/8T) @ 3.3GHz\\\hline
     RAM & 16GB DDR4 3200MHz (\textit{Row-of-chips} {\small$\approx$} 2 $\times$ 8GB)\\\hline
-    Sistema & Ubuntu 20.04 LTS\\\hline
-    Kernel & TODO COMPLETAR \\\hline
-    CC & gcc 11 TODO CHECKEAR VERSIÓN\\\hline
-    OpenBLAS & libopenblas-dev focal, v0.3.8\\\hline
-    librsb & librsb-dev focal, v1.2.0.8\\\hline
-    oneAPI & Intel oneAPI 2022\\\hline
+    Sistema & Ubuntu 20.04.5 LTS\\\hline
+    Kernel & 5.15.0-50-generic \\\hline
+    CC & gcc 9.4.0\\\hline
+    OpenBLAS & OpenBLAS 0.3.21\\\hline
+    librsb & librsb 1.3.0.1\\\hline
+    oneAPI & Intel oneAPI 2022.3\\\hline
 \end{tabular}
 \caption{\label{tb:especificaciones_xiaomi}Especificaciones técnicas del Xiaomi Mi Notebook 15}
 \end{table}
@@ -98,13 +98,18 @@ gcc -march=native -O3 -s common.c dense.c -o sparse.out -lm -lrsb -lopenblas
 \end{lstlisting}
 
 \subsubsection{Código \textit{point-to-point}}
-En este caso solamente se emplean librerías estándar, por lo que en las líneas de compilación simplemente se cambia \texttt{-s} por \texttt{-g3}:\medskip
+En este caso solamente se emplean librerías estándar, por lo que para GCC, en las líneas de compilación simplemente se cambia \texttt{-s} por \texttt{-g3}. Por otro lado y para emplear como contraste, también se emplean los dos compiladores de Intel, ICC, y el nuevo ICX\footnote{Documentación empleada para compilación, así como para posibles líneas de optimización futura, están disponibles en \url{https://www.intel.com/content/www/us/en/developer/articles/guide/porting-guide-for-icc-users-to-dpcpp-or-icx.html}.}:\medskip
 \begin{lstlisting}[language=bash]
 # Para una compilación con OpenMP
 gcc -march=native -O3 -g3 common.c p2p.c -o p2p.out -lm -fopenmp
 
 # Para una compilación sin OpenMP
 gcc -march=native -O3 -g3 common.c p2p.c -o p2p.out -lm -fno-openmp
+
+# Además, para comparación con Intel ICC (Legacy)
+icc -xHost -O3 -g3 common.c p2p.c -o p2p.out -lm -qopenmp
+# Y con el nuevo compilador ICX basado en LLVM
+icx -xhost -O3 -g3 common.c p2p.c -o p2p.out -lm -fiopenmp
 \end{lstlisting}
 
 \section{Medida de rendimiento}
@@ -119,7 +124,7 @@ En la Figura \ref{fig:rendimiento_1M} se pueden observar resultados muy similare
     \label{eq:cross_speedup}
 \end{equation}
 
-Así, se puede apreciar que la mejoría del speedup con un dataset 10 veces más grande es cada vez más alta a partir del 90\% de \textit{sparsity}.
+Así, se puede apreciar que la mejoría del speedup con un dataset 10 veces más grande es cada vez más alta a partir del 90\% de \textit{sparsity} para la implementación punto a punto, siendo sin embargo inferior el rendimiento basado en librsb.
 
 \begin{figure}[htpb]
 \centering
@@ -278,19 +283,8 @@ Así, se puede apreciar que la mejoría del speedup con un dataset 10 veces más
 \label{sec:perfilado_roofline}
 En esta sección se muestran las características de cada carga de trabajo con ayuda de Intel Advisor, y se razonan los posibles resultados que no se han podido obtener debido a limitaciones en el análisis.
 
-
-%%%%%%%%%%%%% COMPLETAR DESDE AQUÍ %%%%%%%%%%%%%
-
 \subsection{Código denso}
-Los resultados obtenidos para la red neuronal densa son los siguientes:
-
-\begin{center}
-Tiempo $(\overline{t} \pm \sigma)$ = 10,300 s $\pm$ 0,152 s
-
-Rangos (min \ldots\ max) = 10,022 s \ldots\ 10,568 s
-\end{center}
-
-Estos resultados se obtienen además realizando un excelente uso de la memoria caché, tal como se muestra en el modelo \textit{roofline} en la Figura \ref{fig:roofline_dense}.
+Los resultados obtenidos para la red neuronal densa son, tal como se espera de una librería de BLAS de amplio uso como OpenBLAS, excelentes. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se muestra en el modelo \textit{roofline} en la Figura \ref{fig:roofline_dense}, los resultados obtiene la Intel MKL son extrapolables por similitud en los tiempos a los de la OpenBLAS.
 
 \begin{figure}[h!]
     \centering
@@ -301,7 +295,7 @@ Estos resultados se obtienen además realizando un excelente uso de la memoria c
 
 Como se puede apreciar en el modelo, el \textit{workload} de interés, que es el que se puede encontrar en la parte superior derecha (coloreado en rojo y verde), corresponde a las funciones \texttt{cblas\_sgemm}. Estas funciones están fuertemente optimizadas y emplean instrucciones AVX512, como se puede observar en los detalles de la carga (Figura \ref{fig:roofline_dense_details}).
 
-Fijándose con atención se pueden ver funciones con un considerablemente menor desempeño en la parte inferior izquierda. Estos puntos corresponden a \texttt{map\_and\_bias} y sucesivas llamadas a otras funciones como \texttt{expf}. Tal como se comenta previamente, una paralelización es sencilla de funciones auxiliares es sencilla. Sin embargo y tal como se puede ver en el modelo, se pueden distinguir perfectamente los componentes de dichas funciones, y siendo el tiempo de ejecución constante para dos redes con las mismas dimensiones, es sencillo discernir qué mejorías vienen causadas por un producto de matrices más eficiente.    
+Fijándose con atención se pueden ver funciones con un considerablemente menor desempeño en la parte inferior izquierda. Estos puntos corresponden a \texttt{map\_and\_bias} y sucesivas llamadas a otras funciones como \texttt{expf}. Tal como se comenta previamente, una paralelización de funciones auxiliares es sencilla. Sin embargo, y tal como se puede ver en el modelo, se pueden distinguir perfectamente los componentes de dichas funciones, por lo que es sencillo discernir qué mejorías podrían ser obtenidas mediante un cambio en el producto de matrices más eficiente.    
 
 \begin{figure}[h!]
     \centering
@@ -311,15 +305,7 @@ Fijándose con atención se pueden ver funciones con un considerablemente menor 
 \end{figure}
 
 \subsection{Código \textit{sparse}}
-Por otro lado, los resultados obtenidos para la red neuronal dispersa son los siguientes:
-
-\begin{center}
-Tiempo $(\overline{t} \pm \sigma)$ = 13,862 s $\pm$ 0,710 s
-
-Rangos (min \ldots\ max) = 12,635 s \ldots\ 15,285 s
-\end{center}
-
-En este caso, debido al empleo de la librería librsb, el modelo \textit{roofline} no contiene información de utilidad (Figura \ref{fig:roofline_sparse_details}). Esto, que a todas luces es un problema, deja de serlo si se realiza un sencillo razonamiento.
+Por otro lado, los resultados obtenidos para la red neuronal dispersa, y tal como se comenta previamente, algo decepcionantes. En este caso, debido al empleo de la librería librsb, el modelo \textit{roofline} no contiene información de utilidad (Figura \ref{fig:roofline_sparse_details}). Esto, que a todas luces es un problema, deja de serlo si se realiza un sencillo razonamiento.
 
 \begin{figure}[h!]
     \centering
@@ -328,7 +314,7 @@ En este caso, debido al empleo de la librería librsb, el modelo \textit{rooflin
     \label{fig:roofline_sparse_details}
 \end{figure}
 
-Teniendo en cuenta que los tiempos de ejecución de una red dispersa al 95\% son \textasciitilde25\% superiores a los de la red completamente conexa, aún teniendo que procesar un 95\% menos de datos, se puede realizar una estimación del número teórico de FLOP necesarios para las operaciones de multiplicación.
+Teniendo en cuenta que los tiempos de ejecución de una red dispersa al 95\% son 5 veces superiores a los de la red completamente conexa aún teniendo que procesar un 95\% menos de datos, se puede realizar una estimación del número teórico de FLOP necesarios para las operaciones de multiplicación.
 
 \subsubsection{Aproximación teórica}
 Tal como se explica en la Sección \ref{sec:multiplicacion_point_to_point}, teniendo en cuenta que una operación FMA realiza dos FLOP, se puede concluir que el número de FLOP para la multiplicación de dos matrices $d\times D$ será $2 \cdot \#nz \cdot k$.
@@ -336,9 +322,13 @@ Tal como se explica en la Sección \ref{sec:multiplicacion_point_to_point}, teni
 \subsubsection{Estimación del rendimiento}
 Teniendo en cuenta que las matrices dispersas de pesos en el código disperso tienen una densidad del 5\% (o lo que es lo mismo, una \textit{sparsity} del 95\%), desde un punto de vista teórico se puede concluír que se deberían realizar un 95\% menos de operaciones en punto flotante.
 
-Sin embargo esta reducción en el número de operaciones necesarias, debido a múltiples factores como el principio de localidad, estructura interna a la hora de almacenar la matriz, estructuras de control, así como optimizaciones internas de la propia librería, no se corresponde con una disminución del tiempo de ejecución, sino más bien todo lo contrario. Esta reducción en el número de FLOPS no lo es sin embargo en intensidad aritmética, puesto que también se cuenta con menor número de bytes de datos, resultando en un hipotético descenso en el eje $y$ en el modelo.
+Esta reducción en el número de operaciones necesarias, debido a múltiples factores como el principio de localidad, estructura interna a la hora de almacenar la matriz, estructuras de control, así como optimizaciones internas de la propia librería, no se corresponde con una disminución del tiempo de ejecución, sino más bien todo lo contrario. Esta reducción en el número de FLOPS no parece a primera vista ser causado por en un descenso en la intensidad aritmética, puesto que también se cuenta con una cantidad proporcionalmente menor de bytes de datos. Sin embargo, hay que tener en cuenta que para cada valor de cada matriz, se cargan como mínimo dos índices enteros que representan su posición, disminuyendo la intensidad aritmética como mínimo a un tercio. Esto implica reducir el valor en el eje $x$ del modelo \textit{roofline} en un factor de 3.
 
-Por esta razón, el modelo \textit{roofline} resultante, que el programa Intel Advisor es incapaz de generar, se vería similar a lo que se puede observar en la Figura \ref{fig:roofline_sparse_estimado}.
+Por otro lado, si se leen proporcionalmente los mismos valores en coma flotante de memoria principal, pero se tarda cinco veces más, esto repercute en un descenso a la quinta parte en FLOPS (es decir, un descenso a la quinta parte en el eje $y$).
+
+Por esta razón, el modelo \textit{roofline} resultante, que el programa Intel Advisor es incapaz de generar por emplear una librería externa, se vería similar a lo que se puede observar en la Figura \ref{fig:roofline_sparse_estimado}.
+
+%%%% TODO MODIFICAR ROOFLINEN SPARSE ESTIMADO %%%%
 
 \begin{figure}[h!]
     \centering
@@ -347,4 +337,10 @@ Por esta razón, el modelo \textit{roofline} resultante, que el programa Intel A
     \label{fig:roofline_sparse_estimado}
 \end{figure}
 
-Estos decepcionantes resultados, sin embargo, no son tan desalentadores, ya que implica que existe un amplio margen de mejora mediante análisis estático de código y generación de instrucciones FMA y de control \textit{ad-hoc}, que incluso pueden ser vectorizadas mediante el empleo de la herramienta MACVETH\footnote{\url{https://github.com/UDC-GAC/MACVETH}}.
+Estos decepcionantes resultados, sin embargo, motivan la creación de arquitecturas punto a punto, ya que implica que existe un amplio margen de mejora mediante análisis estático de código y generación de instrucciones FMA y de control \textit{ad-hoc}.
+
+
+\subsection{Código \textit{point-to-point}}
+El código punto a punto es mucho más demandante a nivel de caché de instrucciones, así como en análisis estático de código, con tiempos de compilación que se acercan a las 24 horas, y decenas de gigabytes de memoria RAM necesaria. Esta aproximación, sin embargo, debido a lo que se presenta a continuación, se espera que tenga un amplio margen de mejora, siendo posible incluso vectorizar y reordenar gran parte de las instrucciones mediante el empleo de la herramienta MACVETH\footnote{\url{https://github.com/UDC-GAC/MACVETH}}.
+
+%% TODO Inserstar múltiples rooflines
