@@ -98,7 +98,7 @@ gcc -march=native -O3 -s common.c dense.c -o sparse.out -lm -lrsb -lopenblas
 \end{lstlisting}
 
 \subsubsection{Código \textit{point-to-point}}
-En este caso solamente se emplean librerías estándar, por lo que para GCC, en las líneas de compilación simplemente se cambia \texttt{-s} por \texttt{-g3}. Por otro lado y para emplear como contraste, también se emplean los dos compiladores de Intel, ICC, y el nuevo ICX\footnote{Documentación empleada para compilación, así como para posibles líneas de optimización futura, están disponibles en \url{https://www.intel.com/content/www/us/en/developer/articles/guide/porting-guide-for-icc-users-to-dpcpp-or-icx.html}.}:\medskip
+En este caso solamente se emplean librerías estándar, por lo que para GCC, en las líneas de compilación simplemente se cambia \texttt{-s} por \texttt{-g3}. Por otro lado y debido a que en este caso la optimización del compilador si es algo importante, ya que no se emplean únicamente funciones de librería, también se emplean los dos compiladores de Intel, que son el antiguo ICC y el nuevo ICX, basado en LLVM\footnote{Documentación empleada para compilación, así como para posibles líneas de optimización futura, están disponibles en \url{https://www.intel.com/content/www/us/en/developer/articles/guide/porting-guide-for-icc-users-to-dpcpp-or-icx.html}.}:\medskip
 \begin{lstlisting}[language=bash]
 # Para una compilación con OpenMP
 gcc -march=native -O3 -g3 common.c p2p.c -o p2p.out -lm -fopenmp
@@ -118,9 +118,9 @@ En esta sección se muestra una comparación de rendimientos entre las diferente
 
 En primer lugar, en la Figura \ref{fig:rendimiento_100k} se muestran los resultados para 100k datos de entrada. En ésta se puede observar como la aproximación punto a punto supera ampliamente a OpenBLAS a partir del 87,5\%, mientras que librsb no es capaz de superar a OpenBLAS en ningún caso, lo que quizás indique que esta librería está enfocada a matrices con un índice de dispersión mayor.
 
-En la Figura \ref{fig:rendimiento_1M} se pueden observar resultados muy similares, destacando quizás que acercándose a índices mayores de dispersión el código mejora mucho más que con una cantidad de datos inferior. Este comportamiento se puede apreciar más claramente en la Figura \ref{fig:cross_speedup_1M_100k}, donde se analiza el \textit{cross-speedup} entre la Figura \ref{fig:rendimiento_100k} y la Figura \ref{fig:rendimiento_1M}. Esto es, siendo $XS$ el \textit{cross-speedup}, $S(A)$ el speedup obtenido con $A$ elementos, se puede decir que la magnitud que se representa gráficamente se calcula tal que:
+En la Figura \ref{fig:rendimiento_1M} se pueden observar resultados muy similares, destacando quizás que acercándose a índices mayores de dispersión el código mejora mucho más que con una cantidad de datos inferior. Este comportamiento se puede apreciar más claramente en la Figura \ref{fig:cross_speedup_1M_100k}, donde se analiza el \textit{cross-speedup} entre la Figura \ref{fig:rendimiento_100k} y la Figura \ref{fig:rendimiento_1M}. Esto es, siendo $XS(A/B)$ el \textit{cross-speedup}, $S(A)$ y $S(B)$ el speedup obtenido con $A$ y $B$ elementos, respectivamente, se puede decir que la magnitud que se representa gráficamente se calcula tal que:
 \begin{equation}
-    XS = S(1M) / S(100k)\nonumber
+    XS(1M/100k) = S(1M) / S(100k)\nonumber
     \label{eq:cross_speedup}
 \end{equation}
 
@@ -324,11 +324,9 @@ Teniendo en cuenta que las matrices dispersas de pesos en el código disperso ti
 
 Esta reducción en el número de operaciones necesarias, debido a múltiples factores como el principio de localidad, estructura interna a la hora de almacenar la matriz, estructuras de control, así como optimizaciones internas de la propia librería, no se corresponde con una disminución del tiempo de ejecución, sino más bien todo lo contrario. Esta reducción en el número de FLOPS no parece a primera vista ser causado por en un descenso en la intensidad aritmética, puesto que también se cuenta con una cantidad proporcionalmente menor de bytes de datos. Sin embargo, hay que tener en cuenta que para cada valor de cada matriz, se cargan como mínimo dos índices enteros que representan su posición, disminuyendo la intensidad aritmética como mínimo a un tercio. Esto implica reducir el valor en el eje $x$ del modelo \textit{roofline} en un factor de 3.
 
-Por otro lado, si se leen proporcionalmente los mismos valores en coma flotante de memoria principal, pero se tarda cinco veces más, esto repercute en un descenso a la quinta parte en FLOPS (es decir, un descenso a la quinta parte en el eje $y$).
+Por otro lado, sabiendo que se leen un 95\% menos de valores en coma flotante, pero que se tarda cinco veces más, esto repercute en un descenso de $5/0,05=100$ veces en FLOPS (es decir, un descenso a la centésima parte, o dos órdenes de magnitud, en el eje $y$).
 
 Por esta razón, el modelo \textit{roofline} resultante, que el programa Intel Advisor es incapaz de generar por emplear una librería externa, se vería similar a lo que se puede observar en la Figura \ref{fig:roofline_sparse_estimado}.
-
-%%%% TODO MODIFICAR ROOFLINEN SPARSE ESTIMADO %%%%
 
 \begin{figure}[h!]
     \centering
@@ -337,10 +335,20 @@ Por esta razón, el modelo \textit{roofline} resultante, que el programa Intel A
     \label{fig:roofline_sparse_estimado}
 \end{figure}
 
-Estos decepcionantes resultados, sin embargo, motivan la creación de arquitecturas punto a punto, ya que implica que existe un amplio margen de mejora mediante análisis estático de código y generación de instrucciones FMA y de control \textit{ad-hoc}.
+Estos decepcionantes resultados, sin embargo, motivan la creación de arquitecturas punto a punto, ya que implica que existe un amplio margen de mejora mediante análisis estático de código y generación de instrucciones \textit{ad-hoc}, tanto FMA como de control.
 
 
 \subsection{Código \textit{point-to-point}}
-El código punto a punto es mucho más demandante a nivel de caché de instrucciones, así como en análisis estático de código, con tiempos de compilación que se acercan a las 24 horas, y decenas de gigabytes de memoria RAM necesaria. Esta aproximación, sin embargo, debido a lo que se presenta a continuación, se espera que tenga un amplio margen de mejora, siendo posible incluso vectorizar y reordenar gran parte de las instrucciones mediante el empleo de la herramienta MACVETH\footnote{\url{https://github.com/UDC-GAC/MACVETH}}.
+El código punto a punto es mucho más demandante a nivel de caché de instrucciones, así como en análisis estático de código, con tiempos de compilación que se acercan a las 24 horas y decenas de gigabytes de memoria RAM empleada durante el proceso de optimización. Esta aproximación, sin embargo, debido a lo que se presenta a continuación, se espera que tenga un amplio margen de mejora, siendo posible vectorizar y reordenar gran parte de las instrucciones mediante el empleo de la herramienta MACVETH\footnote{\url{https://github.com/UDC-GAC/MACVETH}}.
 
-%% TODO Inserstar múltiples rooflines
+\subsubsection{Compiladores empleados}
+Para la generación de código punto a punto, se emplean los compiladores de Intel, ICC e ICX, y el compilador GCC, tal como se comenta en la Subsección \ref{ssec:compilacion_metodologia}.
+
+% import and cut rooflines
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{img/roofline_sparse.png}
+    \caption{\textit{Roofline model} del código \textit{point-to-point}, GCC}
+    \label{fig:roofline_p2p_gcc}
+\end{figure}
