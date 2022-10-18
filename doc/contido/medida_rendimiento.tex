@@ -288,7 +288,7 @@ Los resultados obtenidos para la red neuronal densa son, tal como se espera de u
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=\textwidth]{img/roofline_dense.png}
+    \includegraphics[width=\textwidth]{img/rooflines/roofline_dense.png}
     \caption{\textit{Roofline model} del código denso}
     \label{fig:roofline_dense}
 \end{figure}
@@ -299,7 +299,7 @@ Fijándose con atención se pueden ver funciones con un considerablemente menor 
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.5\textwidth]{img/roofline_dense_details.png}
+    \includegraphics[width=0.5\textwidth]{img/rooflines/roofline_dense_details.png}
     \caption{Detalles de \texttt{cblas\_sgemm} en el modelo del código denso}
     \label{fig:roofline_dense_details}
 \end{figure}
@@ -309,7 +309,7 @@ Por otro lado, los resultados obtenidos para la red neuronal dispersa, y tal com
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=\textwidth]{img/roofline_sparse.png}
+    \includegraphics[width=\textwidth]{img/rooflines/roofline_sparse.png}
     \caption{\textit{Roofline model} del código disperso}
     \label{fig:roofline_sparse_details}
 \end{figure}
@@ -330,7 +330,7 @@ Por esta razón, el modelo \textit{roofline} resultante, que el programa Intel A
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=\textwidth]{img/roofline_sparse_estimado.png}
+    \includegraphics[width=\textwidth]{img/rooflines/roofline_sparse_estimado.png}
     \caption{Estimación del \textit{roofline model} del código disperso}
     \label{fig:roofline_sparse_estimado}
 \end{figure}
@@ -344,11 +344,11 @@ El código punto a punto es mucho más demandante a nivel de caché de instrucci
 \subsubsection{Compiladores empleados}
 Para la generación de código punto a punto, se emplean los compiladores de Intel, ICC e ICX, y el compilador GCC, tal como se comenta en la Subsección \ref{ssec:compilacion_metodologia}.
 
-% import and cut rooflines
-
+\subsubsection{\textit{Roofline models}}
+Para la misma red que en los códigos anteriores, con GCC, se obtiene el siguiente modelo:
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=\textwidth]{img/roofline_sparse.png}
+    \includegraphics[width=\textwidth]{img/rooflines/roofline_p2p_95.png}
     \caption{\textit{Roofline model} del código \textit{point-to-point}, GCC}
     \label{fig:roofline_p2p_gcc}
 \end{figure}
