@@ -345,10 +345,48 @@ El código punto a punto es mucho más demandante a nivel de caché de instrucci
 Para la generación de código punto a punto, se emplean los compiladores de Intel, ICC e ICX, y el compilador GCC, tal como se comenta en la Subsección \ref{ssec:compilacion_metodologia}.
 
 \subsubsection{\textit{Roofline models}}
-Para la misma red que en los códigos anteriores, con GCC, se obtiene el siguiente modelo:
+Para la misma red que en los códigos anteriores, con GCC, se obtiene el modelo visible en la Figura \ref{fig:roofline_p2p_gcc}.
 \begin{figure}[h!]
     \centering
     \includegraphics[width=\textwidth]{img/rooflines/roofline_p2p_95.png}
     \caption{\textit{Roofline model} del código \textit{point-to-point}, GCC}
     \label{fig:roofline_p2p_gcc}
+\end{figure}
+
+Por otro lado, para códigos compilados con GCC, con dispersiones del 90\% (\ref{fig:roofline_p2p_gcc_90}) y 99\% (\ref{fig:roofline_p2p_gcc_99}) se obtienen los modelos visibles en la Figura \ref{fig:rooflines_p2p_gcc_90_99}.
+
+\begin{figure}[htpb]
+    \centering
+    \begin{subfigure}[b]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{img/rooflines/roofline_p2p_90.png}
+        \caption{\textit{Sparsity} del 90\%}
+        \label{fig:roofline_p2p_gcc_90}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{img/rooflines/roofline_p2p_99.png}
+        \caption{\textit{Sparsity} del 99\%}
+        \label{fig:roofline_p2p_gcc_99}
+    \end{subfigure}
+
+    \caption{\textit{Roofline models} de los códigos \textit{point-to-point}, GCC}
+    \label{fig:rooflines_p2p_gcc_90_99}
+\end{figure}
+
+Y por último y como contraste, para las mismas redes al 99\% de índice de dispersión, se recopilan también los modelos de programas compilados con ICC (\ref{fig:roofline_p2p_icc_99}) e ICX (\ref{fig:roofline_p2p_icx_99}) en la Figura \ref{fig:rooflines_p2p_icc_icx_99}.
+
+\begin{figure}[htpb]
+    \centering
+    \begin{subfigure}[b]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{img/rooflines/roofline_p2p_99_icc.png}
+        \caption{ICC}
+        \label{fig:roofline_p2p_icc_99}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{img/rooflines/roofline_p2p_99_icx.png}
+        \caption{ICX}
+        \label{fig:roofline_p2p_icx_99}
+    \end{subfigure}
+
+    \caption{\textit{Roofline models} de los códigos \textit{point-to-point} 99\% con ICC e ICX}
+    \label{fig:rooflines_p2p_icc_icx_99}
 \end{figure}
