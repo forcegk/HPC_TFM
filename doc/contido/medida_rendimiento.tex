@@ -116,7 +116,7 @@ icx -xhost -O3 -g3 common.c p2p.c -o p2p.out -lm -fiopenmp
 \label{sec:medida_rendimiento}
 En esta sección se muestra una comparación de rendimientos entre las diferentes implementaciones o \textit{\gls{backend}s} para cada \textit{sparsity} y aproximación usada (OpenBLAS, librsb o p2p), basados en medidas obtenidas según la metodología descrita en la sección anterior.
 
-En primer lugar, en la Figura \ref{fig:rendimiento_100k} se muestran los resultados para 100k datos de entrada. En ésta se puede observar como la aproximación punto a punto supera ampliamente a OpenBLAS a partir del 87,5\%, mientras que librsb no es capaz de superar a OpenBLAS en ningún caso, lo que quizás indique que esta librería está enfocada a matrices con un índice de dispersión mayor.
+En primer lugar, en la Figura \ref{fig:rendimiento_100k} se muestran los resultados para 100k datos de entrada. En ésta se puede observar como la aproximación punto a punto supera ampliamente a OpenBLAS a partir del 87,5\% de \textit{sparsity}, mientras que librsb no es capaz de superar a OpenBLAS en ningún caso, lo que quizás indique que esta librería está enfocada a matrices con un índice de dispersión mayor.
 
 En la Figura \ref{fig:rendimiento_1M} se pueden observar resultados muy similares, destacando quizás que acercándose a índices mayores de dispersión el código mejora mucho más que con una cantidad de datos inferior. Este comportamiento se puede apreciar más claramente en la Figura \ref{fig:cross_speedup_1M_100k}, donde se analiza el \textit{cross-speedup} entre la Figura \ref{fig:rendimiento_100k} y la Figura \ref{fig:rendimiento_1M}. Esto es, siendo $XS(A/B)$ el \textit{cross-speedup}, $S(A)$ y $S(B)$ el speedup obtenido con $A$ y $B$ elementos, respectivamente, se puede decir que la magnitud que se representa gráficamente se calcula tal que:
 \begin{equation}
@@ -284,7 +284,7 @@ Así, se puede apreciar que la mejoría del speedup con un dataset 10 veces más
 En esta sección se muestran las características de cada carga de trabajo con ayuda de Intel Advisor, y se razonan los posibles resultados que no se han podido obtener debido a limitaciones en el análisis.
 
 \subsection{Código denso}
-Los resultados obtenidos para la red neuronal densa son, tal como se espera de una librería de BLAS de amplio uso como OpenBLAS, excelentes. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se muestra en el modelo \textit{roofline} en la Figura \ref{fig:roofline_dense}, los resultados obtiene la Intel MKL son extrapolables por similitud en los tiempos a los de la OpenBLAS.
+Los resultados obtenidos para la red neuronal densa son, tal como se espera de una librería de BLAS de amplio uso como OpenBLAS, excelentes. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se muestra en el modelo \textit{roofline} en la Figura \ref{fig:roofline_dense}, los resultados obtiene la Intel MKL son extrapolables por similitud en los tiempos a los de OpenBLAS.
 
 \begin{figure}[h!]
     \centering
@@ -390,3 +390,8 @@ Y por último y como contraste, para las mismas redes al 99\% de índice de disp
     \caption{\textit{Roofline models} de los códigos \textit{point-to-point} 99\% con ICC e ICX}
     \label{fig:rooflines_p2p_icc_icx_99}
 \end{figure}
+
+\section{Resultados}
+Los resultados son cuanto menos sorprendentes. El rendimiento de OpenBLAS es fantástico, tal como se espera de una librería de dicha importancia. Por otro lado, librsb rinde particularmente mal. Esto indica que quizás esté pensada para niveles de dispersión varios órdenes de magnitud por encima de lo que se emplea en este trabajo, como por ejemplo para operaciones con matrices empleadas en redes sociales, con una muy elevada cantidad de ceros antes del primer decimal, para, por ejemplo, representar los usuarios que se siguen entre ellos.
+
+Con respecto a los resultados de códigos punto a punto, los tiempos comienzan a superar a los obtenidos por OpenBLAS por encima del 87,5\% de dispersión. Esta \textit{sparsity} resulta algo elevada en el ámbito de las redes reuronales y deep learning, aunque todavía queda espacio para mejora mediante vectorización y, sobre todo, un correcto filtrado de lo datos de entrada para una mejor utilización de la memoria caché y una reordenación de operaciones más acertada por parte del compilador y otras posibles herramientas auxiliares (MACVETH).
