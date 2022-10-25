@@ -1,22 +1,27 @@
 \chapter{Introducción}
 \label{chap:introducion}
 
-\lettrine{E}{n} este capítulo se expondrá qué motivó este \acrlong{tfm} y sus objetivos, así como qué estructura seguirá la memoria del mismo.
+\lettrine{E}{n} este capítulo se expone la motivación de este \acrlong{tfm} sus objetivos y la estructura de la memoria.
 
 \section{Motivación}
 \label{sec:motivacion}
-La computación de altas prestaciones (\acrshort{hpc}, o \acrlong{hpc}) y la \acrlong{ia} (\acrshort{ia}) están de moda. A pesar de que la primera es parte necesaria de muchos modelos complejos, que se mencionan más adelante en este trabajo, debido a la alta demanda de potencia de cómputo especialmente en la fase de entrenamiento de los mismos, es cierto que la inteligencia artificial es la más espectacular y tangible de cara al público.
-Estos modelos de redes neuronales están evolucionando a enorme velocidad, y con ello sus posibles aplicaciones presentes y futuras. Debido a esta fuerte entrada de la \acrshort{ia} en lo \textit{mainstream}, son cada vez más necesarias soluciones de bajo consumo en una economía de escala.
+La computación de altas prestaciones (\acrshort{hpc}, o \acrlong{hpc}) y la \acrlong{ia} (\acrshort{ia}) hoy en día están en boca de todos. Esta última es sin duda la más espectacular y que más alegrías está dando, tanto al público general como al sector de la investigación.
+Modelos que realizan tareas como conducción autónoma o cración instantánea de verdaderas obras de arte, así como muy convincentes ensayos en múltiples lenguas, nos hacen ver que las redes neuronales, lejos de estar en declive, están evolucionando a enorme velocidad, y con ello sus posibles aplicaciones presentes y futuras. Debido a este fuerte desarrollo de sistemas con inteligencia artificial, y la correspondiente presente y futura entrada de este tipo de modelos en el \textit{mainstream}, son cada vez más necesarias soluciones de bajo consumo en una economía de escala.
 
 \section{Objetivos}
 \label{sec:objetivos}
-Este trabajo supone un primer paso en la nueva línea de investigación que comencé este curso académico, y por tanto no es de un muy elevado nivel debido a la falta de experiencia previa en este campo. Sin embargo, es cierto que para esta memoria se han intentado incorporar conocimientos adquiridos en varias asignaturas cursadas durante este año en el Máster en Computación de Altas Prestaciones.
+El objetivo principal de este trabajo es el análisis y una posible mejora de los tiempos de ejecución de modelos de inteligencia artificial en fase de inferencia, así como de su consumo energético. En esta memoria se realiza una breve introducción a una de las arquitecturas de redes neuronales más simples y su implementación de bajo nivel. En base a esta se analiza el rendimiento de las mismas y se proponen mejoras, así como una prueba de concepto de las mismas. En un siglo XXI donde el producto de matrices es uno de los algoritmos más fuertemente optimizados y trabajados de la historia de la computación, se propone una implementación de producto de matrices para redes neuronales dispersas mediante una arquitectura punto a punto (\textit{point-to-point} o \textit{p2p}), y se compara su rendimiento con una de las librerías de matrices dispersas más empleadas.
+
+Esta comparación de rendimiento, debido al tipo de código empleado y para obtener una mejor métrica de dónde se ha de incidir en el futuro, se debe realizar con las más que habituales gráficas de \textit{speedup} complementadas con modelos \textit{roofline}.
+
+Los objetivos principales de este trabajo se cumplen durante el desarrollo de este trabajo, puesto que se debe obtener una comprensión detallada de funcionamiento a bajo nivel de este tipo de redes, su implementación en \acrlong{tf}, implementación alternativa en código C con \texttt{OpenBLAS}, \texttt{librsb} y punto a punto, así como generación automatizada de dicho código.
 
 \section{Estructura}
 \label{sec:estructura}
-Esta memoria describe el proceso de aprendizaje, conceptos básicos, y posibles líneas de mejora de la ejecución de modelos de inteligencia artificial en fase de inferencia. Dicho aprendizaje de conceptos, así como puesta en práctica se han realizado siguiendo un ciclo de vida en espiral, pero en esta memoria se muestran todas las fases comunes agrupadas.
+En esta memoria se tratan las redes neuronales desde un punto de vista de implementación y matemático, se perfilan y se proponen mejoras. Comenzando por el Capítulo \ref{chap:conceptos_basicos}, se tratan los conceptos más básicos de las redes neuronales feed-forward, se detalla la implementación a alto nivel, y se presentan conceptos que se citarán a lo largo del resto de la memoria. En el siguiente capítulo, se tratan los múltiples usos reales de las redes neuronales con diferentes arquitecturas pasadas y presentes, siendo un ejemplo de estas últimas las redes generativas adversarias y los \textit{transformers}, entre otros. En ese mismo capítulo se analizan los perfilados conducidos en las principales fuentes bibliográficas, para poner el foco en el exponencial aumento del consumo de energía que conllevarán estas redes en el futuro próximo. Como una posible solución se propone el podado de redes, junto a una prueba de concepto que demuestre la viabilidad de esta aproximación.
 
-De esta forma, primero se da una breve introducción y los conceptos básicos necesarios para comprender esta memoria. Tras ello, TODO xyz.
-En el penúltimo capítulo se muestra la planificación e hipotéticos costes derivados de las horas invertidas en la investigación necesaria para la realización de este trabajo.
+El funcionamiento de esta prueba de concepto (\textit{\acrlong{poc}} o \textit{\acrshort{poc}}) se detalla en el Capítulo \ref{chap:desarrollo_poc}, donde se muestran, con un esquema de desarrollo incremental, los objetivos y pasos que se han seguido durante la creación de esta \acrshort{poc}.
 
-Todo esto para terminar con las conclusiones extraídas de este proceso, cómo este se relaciona con la titulación, así como las disciplinas requeridas para la realización del mismo. Las líneas de trabajo futuras también se resumen en estas, aunque de todos modos, este \acrshort{tfm} está ``orientado a líneas futuras'' principalmente.
+Tras el desarrollo de esta prueba de concepto, se miden los rendimientos y se perfilan las tres implementaciones, comparando así redes densas basadas en \texttt{OpenBLAS}, con las dispersas basadas por un lado en \texttt{librsb}, y por otro en una arquitectura punto a punto sin el empleo de librerías externas.
+
+Tras todo esto, se termina con las conclusiones extraídas de este proceso, cómo este se relaciona con la titulación, las líneas futuras de investigación, así como las disciplinas empleadas y habilidades aprendidas durante la realización del \acrshort{tfm}. Por último, se incluye una lista de referencias bibliográficas, acrónimos y glosario.

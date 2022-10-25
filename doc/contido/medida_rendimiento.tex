@@ -7,7 +7,7 @@
 \label{sec:metodologia}
 La medida del rendimiento de las pruebas de concepto se realiza por partes mediante el empleo del reloj monotónico del sistema en microsegundos. Al ser sobre todo los códigos densos y de librería simples pruebas de concepto, funciones auxiliares como por ejemplo \texttt{map\_and\_bias} no está debidamente paralelizada con OpenMP, a diferencia de la versión punto a punto, donde realizar esto es tarea trivial partiendo de la base de que OpenMP ya es necesario para el funcionamiento base. Realizar esta optimización no es difícil, es algo innecesario cuando lo que se pretende es medir las posibilidades de una aproximación, centrándose en el producto de matrices, y no optimizar y trabajar a fondo con una implementación en particular.
 
-Por esta razón se ha decidido simplemente implementar de forma sencilla la generación de código con las librerías OpenBLAS y librsb sin añadir OpenMP, y la punto a punto completamente paralelizada con OpenMP. El \textit{overhead} que añade el procesado auxiliar de datos de forma secuencial es creciente conforme se aumentan el número de procesadores paralelos. Sin embargo, debido a que las mediciones de tiempos se realizan de forma aislada, estas no precisan de paralelización en un entorno de pruebas.
+Por esta razón se ha decidido simplemente implementar de forma sencilla la generación de código con las librerías \texttt{OpenBLAS} y \texttt{librsb} sin añadir OpenMP, y la punto a punto completamente paralelizada con OpenMP. El \textit{overhead} que añade el procesado auxiliar de datos de forma secuencial es creciente conforme se aumentan el número de procesadores paralelos. Sin embargo, debido a que las mediciones de tiempos se realizan de forma aislada, estas no precisan de paralelización en un entorno de pruebas.
 
 \subsection{Común}
 \label{ssec:comun_metodologia}
@@ -74,14 +74,14 @@ Las ejecuciones para medición de tiempos se realizan en la partición \texttt{c
 \label{ssec:analisis_perfilado_metodologia}
 Para el análisis y perfilado se emplea el programa Intel Advisor, el cual permite realizar modelos \textit{roofline} de partes individualizadas de programas, incluyendo las funciones de su librería \acrshort{mkl} (\textit{\acrlong{mkl}}). Esto es especialmente útil para perfilar tanto la implementación densa, que emplea funciones de \texttt{cblas} ampliamente utilizadas, así como la punto a punto, que no emplea ninguna llamada a librería.
 
-Sin embargo, esta universalidad se pierde con la versión dispersa (\textit{sparse}), ya que se emplean funciones \textit{built-in} de OpenBLAS, así como funciones propias de librsb, lo que hace que cambiar a la \acrshort{mkl} requiera una reprogramación de ciertas líneas del código para poder perfilar las funciones de librería con Intel Advisor. Esto es algo costoso que inicialmente puede parecer un problema, pero es un trabajo que se puede evitar si se razona con respecto al modelo \textit{roofline} de la versión densa.
+Sin embargo, esta universalidad se pierde con la versión dispersa (\textit{sparse}), ya que se emplean funciones \textit{built-in} de \texttt{OpenBLAS}, así como funciones propias de \texttt{librsb}, lo que hace que cambiar a la \acrshort{mkl} requiera una reprogramación de ciertas líneas del código para poder perfilar las funciones de librería con Intel Advisor. Esto es algo costoso que inicialmente puede parecer un problema, pero es un trabajo que se puede evitar si se razona con respecto al modelo \textit{roofline} de la versión densa.
 
 \subsection{Compilación}
 \label{ssec:compilacion_metodologia}
-Para compilar las versiones densa y dispersa se requiere intercambiar OpenBLAS por la Intel \acrshort{mkl}, así como desactivar el \textit{stripping} del binario para activar los símbolos de depuración (susituir parámetro \texttt{-s} por \texttt{-g}). La versión punto a punto no requiere modificaciones significativas ya que únicamente emplea librerías estándar. En cuanto a las funciones de \acrshort{blas}, la modificación de las líneas de compilación genéricas que se pueden encontrar en el fichero \texttt{.ipynb} se muestra estructurado a continuación.
+Para compilar las versiones densa y dispersa se requiere intercambiar \texttt{OpenBLAS} por la Intel \acrshort{mkl}, así como desactivar el \textit{stripping} del binario para activar los símbolos de depuración (susituir parámetro \texttt{-s} por \texttt{-g}). La versión punto a punto no requiere modificaciones significativas ya que únicamente emplea librerías estándar. En cuanto a las funciones de \acrshort{blas}, la modificación de las líneas de compilación genéricas que se pueden encontrar en el fichero \texttt{.ipynb} se muestra estructurado a continuación.
 
 \subsubsection{Código denso}
-Para la obtención del \textit{roofline model} de la carga de trabajo, es necesario o bien calcularlo manualmente, o bien emplear alguna herramienta adecuada para ello. Como ya se comenta previamente, se emplea Intel Advisor para el perfilado del código, por lo que es necesario compilar el código denso con una configuración que sustituya OpenBLAS por \acrshort{mkl}. Para esto se puede compilar de las siguientes formas:\medskip
+Para la obtención del \textit{roofline model} de la carga de trabajo, es necesario o bien calcularlo manualmente, o bien emplear alguna herramienta adecuada para ello. Como ya se comenta previamente, se emplea Intel Advisor para el perfilado del código, por lo que es necesario compilar el código denso con una configuración que sustituya \texttt{OpenBLAS} por \acrshort{mkl}. Para esto se puede compilar de las siguientes formas:\medskip
 \begin{lstlisting}[language=bash]
 # Para una compilación convencional sin depuración con OpenBLAS, sería necesario únicamente ejecutar
 gcc -march=native -O3 -s common.c dense.c -o dense.out -lm -lopenblas
@@ -114,9 +114,9 @@ icx -xhost -O3 -g3 common.c p2p.c -o p2p.out -lm -fiopenmp
 
 \section{Medida de rendimiento}
 \label{sec:medida_rendimiento}
-En esta sección se muestra una comparación de rendimientos entre las diferentes implementaciones o \textit{\gls{backend}s} para cada \textit{sparsity} y aproximación usada (OpenBLAS, librsb o p2p), basados en medidas obtenidas según la metodología descrita en la sección anterior.
+En esta sección se muestra una comparación de rendimientos entre las diferentes implementaciones o \textit{\gls{backend}s} para cada \textit{sparsity} y aproximación usada (\texttt{OpenBLAS}, \texttt{librsb} o p2p), basados en medidas obtenidas según la metodología descrita en la sección anterior.
 
-En primer lugar, en la Figura \ref{fig:rendimiento_100k} se muestran los resultados para 100k datos de entrada. En ésta se puede observar como la aproximación punto a punto supera ampliamente a OpenBLAS a partir del 87,5\% de \textit{sparsity}, mientras que librsb no es capaz de superar a OpenBLAS en ningún caso, lo que quizás indique que esta librería está enfocada a matrices con un índice de dispersión mayor.
+En primer lugar, en la Figura \ref{fig:rendimiento_100k} se muestran los resultados para 100k datos de entrada. En ésta se puede observar como la aproximación punto a punto supera ampliamente a \texttt{OpenBLAS} a partir del 87,5\% de \textit{sparsity}, mientras que \texttt{librsb} no es capaz de superar a \texttt{OpenBLAS} en ningún caso, lo que quizás indique que esta librería está enfocada a matrices con un índice de dispersión mayor.
 
 En la Figura \ref{fig:rendimiento_1M} se pueden observar resultados muy similares, destacando quizás que acercándose a índices mayores de dispersión el código mejora mucho más que con una cantidad de datos inferior. Este comportamiento se puede apreciar más claramente en la Figura \ref{fig:cross_speedup_1M_100k}, donde se analiza el \textit{cross-speedup} entre la Figura \ref{fig:rendimiento_100k} y la Figura \ref{fig:rendimiento_1M}. Esto es, siendo $XS(A/B)$ el \textit{cross-speedup}, $S(A)$ y $S(B)$ el speedup obtenido con $A$ y $B$ elementos, respectivamente, se puede decir que la magnitud que se representa gráficamente se calcula tal que:
 \begin{equation}
@@ -124,7 +124,7 @@ En la Figura \ref{fig:rendimiento_1M} se pueden observar resultados muy similare
     \label{eq:cross_speedup}
 \end{equation}
 
-Así, se puede apreciar que la mejoría del speedup con un dataset 10 veces más grande es cada vez más alta a partir del 90\% de \textit{sparsity} para la implementación punto a punto, siendo sin embargo inferior el rendimiento basado en librsb.
+Así, se puede apreciar que la mejoría del speedup con un dataset 10 veces más grande es cada vez más alta a partir del 90\% de \textit{sparsity} para la implementación punto a punto, siendo sin embargo inferior el rendimiento basado en \texttt{librsb}.
 
 \begin{figure}[htpb]
 \centering
@@ -284,7 +284,7 @@ Así, se puede apreciar que la mejoría del speedup con un dataset 10 veces más
 En esta sección se muestran las características de cada carga de trabajo con ayuda de Intel Advisor, y se razonan los posibles resultados que no se han podido obtener debido a limitaciones en el análisis.
 
 \subsection{Código denso}
-Los resultados obtenidos para la red neuronal densa son, tal como se espera de una librería de BLAS de amplio uso como OpenBLAS, excelentes. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se muestra en el modelo \textit{roofline} en la Figura \ref{fig:roofline_dense}, los resultados obtiene la Intel MKL son extrapolables por similitud en los tiempos a los de OpenBLAS.
+Los resultados obtenidos para la red neuronal densa son, tal como se espera de una librería de BLAS de amplio uso como \texttt{OpenBLAS}, excelentes. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se muestra en el modelo \textit{roofline} en la Figura \ref{fig:roofline_dense}, los resultados obtiene la Intel MKL son extrapolables por similitud en los tiempos a los de \texttt{OpenBLAS}.
 
 \begin{figure}[h!]
     \centering
@@ -305,7 +305,7 @@ Fijándose con atención se pueden ver funciones con un considerablemente menor 
 \end{figure}
 
 \subsection{Código \textit{sparse}}
-Por otro lado, los resultados obtenidos para la red neuronal dispersa, y tal como se comenta previamente, algo decepcionantes. En este caso, debido al empleo de la librería librsb, el modelo \textit{roofline} no contiene información de utilidad (Figura \ref{fig:roofline_sparse_details}). Esto, que a todas luces es un problema, deja de serlo si se realiza un sencillo razonamiento.
+Por otro lado, los resultados obtenidos para la red neuronal dispersa, y tal como se comenta previamente, algo decepcionantes. En este caso, debido al empleo de la librería \texttt{librsb}, el modelo \textit{roofline} no contiene información de utilidad (Figura \ref{fig:roofline_sparse_details}). Esto, que a todas luces es un problema, deja de serlo si se realiza un sencillo razonamiento.
 
 \begin{figure}[h!]
     \centering
@@ -392,6 +392,6 @@ Y por último y como contraste, para las mismas redes al 99\% de índice de disp
 \end{figure}
 
 \section{Resultados}
-Los resultados son cuanto menos sorprendentes. El rendimiento de OpenBLAS es fantástico, tal como se espera de una librería de dicha importancia. Por otro lado, librsb rinde particularmente mal. Esto indica que quizás esté pensada para niveles de dispersión varios órdenes de magnitud por encima de lo que se emplea en este trabajo, como por ejemplo para operaciones con matrices empleadas en redes sociales, con una muy elevada cantidad de ceros antes del primer decimal, para, por ejemplo, representar los usuarios que se siguen entre ellos.
+Los resultados son cuanto menos sorprendentes. El rendimiento de \texttt{OpenBLAS} es fantástico, tal como se espera de una librería de dicha importancia. Por otro lado, \texttt{librsb} rinde particularmente mal. Esto indica que quizás esté pensada para niveles de dispersión varios órdenes de magnitud por encima de lo que se emplea en este trabajo, como por ejemplo para operaciones con matrices empleadas en redes sociales, con una muy elevada cantidad de ceros antes del primer decimal, para, por ejemplo, representar los usuarios que se siguen entre ellos.
 
-Con respecto a los resultados de códigos punto a punto, los tiempos comienzan a superar a los obtenidos por OpenBLAS por encima del 87,5\% de dispersión. Esta \textit{sparsity} resulta algo elevada en el ámbito de las redes reuronales y deep learning, aunque todavía queda espacio para mejora mediante vectorización y, sobre todo, un correcto filtrado de lo datos de entrada para una mejor utilización de la memoria caché y una reordenación de operaciones más acertada por parte del compilador y otras posibles herramientas auxiliares (MACVETH).
+Con respecto a los resultados de códigos punto a punto, los tiempos comienzan a superar a los obtenidos por \texttt{OpenBLAS} por encima del 87,5\% de dispersión. Esta \textit{sparsity} resulta algo elevada en el ámbito de las redes reuronales y deep learning, aunque todavía queda espacio para mejora mediante vectorización y, sobre todo, un correcto filtrado de lo datos de entrada para una mejor utilización de la memoria caché y una reordenación de operaciones más acertada por parte del compilador y otras posibles herramientas auxiliares (MACVETH).
