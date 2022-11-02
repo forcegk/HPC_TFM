@@ -62,6 +62,15 @@ abstract = {Machine learning, and specifically deep learning, has been hugely di
   urldate = {2022-07-07}
 }
 
+@Misc{netlib_blas,
+  language={english},
+  title={{BLAS Documentation on netlib}},
+  author={netlib.org},
+  url = {https://netlib.org/blas/},
+  year={2022},
+  urldate = {2022-11-02}
+}
+
 @conference{custom_high_performance_vector_codegen_sparse_computations,
 author = {Horro Varela, Marcos and Pouchet, Louis-Noël and Rodríguez, Gabriel and Touriño, Juan},
 year = {2022},
@@ -135,4 +144,24 @@ booktitle = {{31st International Conference on Parallel Architectures and Compil
   title={Sparsity in Deep Learning: Pruning and growth for efficient inference and training in neural networks. arXiv 2021},
   author={Hoefler, T and Alistarh, D and Ben-Nun, T and Dryden, N and Peste, A},
   journal={arXiv preprint arXiv:2102.00554}
+}
+
+@article{sparse_blas_10.1145/567806.567810,
+author = {Duff, Iain S. and Heroux, Michael A. and Pozo, Roldan},
+title = {An Overview of the Sparse Basic Linear Algebra Subprograms: The New Standard from the BLAS Technical Forum},
+year = {2002},
+issue_date = {June 2002},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {28},
+number = {2},
+issn = {0098-3500},
+url = {https://doi.org/10.1145/567806.567810},
+doi = {10.1145/567806.567810},
+abstract = {We discuss the interface design for the Sparse Basic Linear Algebra Subprograms (BLAS), the kernels in the recent standard from the BLAS Technical Forum that are concerned with unstructured sparse matrices. The motivation for such a standard is to encourage portable programming while allowing for library-specific optimizations. In particular, we show how this interface can shield one from concern over the specific storage scheme for the sparse matrix. This design makes it easy to add further functionality to the sparse BLAS in the future.We illustrate the use of the Sparse BLAS with examples in the three supported programming languages, Fortran 95, Fortran 77, and C.},
+journal = {ACM Trans. Math. Softw.},
+month = {jun},
+pages = {239-267},
+numpages = {29},
+keywords = {sparse BLAS, software, Algorithms, computational kernels, sparse matrices, sparse iterative methods}
 }

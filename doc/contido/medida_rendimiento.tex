@@ -313,10 +313,10 @@ Por otro lado, los resultados obtenidos para la red neuronal dispersa, y tal com
     \label{fig:roofline_sparse_details}
 \end{figure}
 
-Teniendo en cuenta que los tiempos de ejecución de una red dispersa al 95\% son 5 veces superiores a los de la red completamente conexa aún teniendo que procesar un 95\% menos de datos, se puede realizar una estimación del número teórico de FLOP necesarios para las operaciones de multiplicación.
+Teniendo en cuenta que los tiempos de ejecución de una red dispersa al 95\% son 5 veces superiores a los de la red completamente conexa aún teniendo que procesar un 95\% menos de datos, se puede realizar una estimación del número teórico de FLOPs necesarios para las operaciones de multiplicación.
 
 \subsubsection{Aproximación teórica}
-Tal como se explica en la Sección \ref{sec:multiplicacion_point_to_point}, teniendo en cuenta que una operación FMA realiza dos FLOP, se puede concluir que el número de FLOP para la multiplicación de dos matrices $d\times D$ será $2 \cdot \#nz \cdot k$.
+Tal como se explica en la Sección \ref{sec:multiplicacion_point_to_point}, teniendo en cuenta que una operación \texttt{\acrshort{fma}} realiza dos FLOPs, se puede concluir que el número de FLOPs para la multiplicación de dos matrices $d\times D$ será $2 \cdot \#nz \cdot k$.
 
 \subsubsection{Estimación del rendimiento}
 Teniendo en cuenta que las matrices dispersas de pesos en el código disperso tienen una densidad del 5\% (o lo que es lo mismo, una \textit{sparsity} del 95\%), desde un punto de vista teórico se puede concluír que se deberían realizar un 95\% menos de operaciones en punto flotante.
