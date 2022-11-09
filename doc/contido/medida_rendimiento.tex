@@ -1,25 +1,25 @@
 \chapter{Medida del rendimiento y perfilado}
 \label{chap:medida_rendimiento_perfilado}
 
-\lettrine{E}{n} este capítulo, tras plantear la problemática y documentar cómo se construye la Prueba de Concepto en los capítulos anteriores, se muestran los resultados de las medidas de rendimiento tanto para los códigos densos como dispersos, tanto basados en librería como en arquitectura \textit{point-to-point}. Estos resultados se comparan con los que se pueden ver en la literatura ya existente, para comprobar si la red implementada se adhiere a los patrones indicados, por ejemplo, en la Sección \ref{sec:investigacion_optimizaciones_propuestas}.
+\lettrine{E}{n} este capítulo, una vez expuesta la motivación y habiendo documentado cómo se construye la Prueba de Concepto para medida de rendimiento en redes densas y dispersas con diferentes implementaciones, se muestran los resultados de las medidas de rendimiento tanto para todas estas implementaciones, tanto para aquellas basadas en librerías como en la basada en una arquitectura \textit{point-to-point}. Estos resultados pueden ser comparados con los que se pueden ver en la literatura ya existente, combrobando si la red implementada se adhiere a los patrones de \textit{speedup} según dispersión que se pueden observar en la Sección \ref{sec:investigacion_optimizaciones_propuestas}. Por último se muestran modelos \textit{roofline}\footnote{\url{https://www.intel.com/content/www/us/en/developer/articles/guide/intel-advisor-roofline.html}} de diferentes códigos compilados con diferentes compiladores a modo de comparación en cuanto a la calidad de la generación de código máquina de los mismos.
 
 \section{Metodología}
 \label{sec:metodologia}
-La medida del rendimiento de las pruebas de concepto se realiza por partes mediante el empleo del reloj monotónico del sistema en microsegundos. Al ser sobre todo los códigos densos y de librería simples pruebas de concepto, funciones auxiliares como por ejemplo \texttt{map\_and\_bias} no está debidamente paralelizada con OpenMP, a diferencia de la versión \textit{point-to-point}, donde realizar esto es tarea trivial partiendo de la base de que OpenMP ya es necesario para el funcionamiento base. Realizar esta optimización no es difícil, es algo innecesario cuando lo que se pretende es medir las posibilidades de una aproximación, centrándose en el producto de matrices, y no optimizar y trabajar a fondo con una implementación en particular.
+La medida del rendimiento de la Prueba de Concepto se realiza por secciones, mediante el empleo del reloj del sistema en microsegundos. Dado que los códigos densos y de librería son simples pruebas de concepto, las funciones auxiliares como por ejemplo \texttt{map\_and\_bias} no están debidamente paralelizadas con \texttt{OpenMP}, a diferencia de la versión \textit{point-to-point}, donde su paralelización es tarea trivial teniendo en cuenta que \texttt{OpenMP} ya es necesario para su funcionamiento base. Si bien implementar soporte para \texttt{OpenMP} en los programas de librería no es difícil, ya que esto consistiría en hacer un \textit{backport} del código paralelo de la versión \textit{point-to-point}, parece innecesario cuando el objetivo medir las posibilidades de una aproximación, centrándose en el producto de matrices, y no tanto el optimizar y trabajar a fondo con una implementación de prueba empleada únicamente como contraste.
 
-Por esta razón se ha decidido simplemente implementar de forma sencilla la generación de código con las librerías \texttt{OpenBLAS} y \texttt{librsb} sin añadir OpenMP, y la \textit{point-to-point} completamente paralelizada con OpenMP. El \textit{overhead} que añade el procesado auxiliar de datos de forma secuencial es creciente conforme se aumentan el número de procesadores paralelos. Sin embargo, debido a que las mediciones de tiempos se realizan de forma aislada, estas no precisan de paralelización en un entorno de pruebas.
+Por esta razón, se ha decidido implementar de forma sencilla la generación de código con las librerías \texttt{OpenBLAS} y \texttt{librsb} sin el empleo de \texttt{OpenMP}, pero sin embargo paralelizar al completo la versión \textit{point-to-point}. El procesado auxiliar de datos de forma secuencial, como por ejemplo el que realiza la función \texttt{map\_and\_bias} para los códigos con funciones de librería representa una porción creciente del tiempo de ejecución conforme las funciones optimizadas de \texttt{OpenBLAS} y \texttt{librsb} tienen acceso a más núcleos de CPU. Sin embargo, debido a que las mediciones de tiempos se realizan de forma aislada, el tiempo extra que representen estas funciones secuenciales no afecta en absoluto a la medida final.
 
-\subsection{Común}
-\label{ssec:comun_metodologia}
-Para la medida del rendimiento y perfilado se generan dos redes neuronales de un tamaño absurdamente grande, una densa con capas completamente conexas con un anchos tal que \{capa de entrada, $n\:\times\:$capas ocultas, capa de salida\} = \{24, 500, 800, 1000, 1200, 600, 400, 200, 100, 50, 1\}, y varias redes dispersas basadas en esta primera, con índices de dispersión del 60\%, 70\%, 80\%, 85\%, 90\%, 95\% y 99\%. Estos tamaños no son seleccionados de forma arbitraria, sino que responden a los índices de dispersión alrededor de los cuales se maximiza el rendimiento y precisión con redes correctamente diseñadas y entrenadas \cite[Figura 4]{hoefler2102sparsity}. Evidentemente, para el problema que se pretende resolver, estas redes son completamente inadecuadas y están muy sobredimensionadas, siendo cuanto menos inútiles en su cometido, puesto que debido a su enorme tamaño lo único que aprenden durante el proceso de entrenamiento es a marcar como positivos todos los \textit{inputs}.
+\subsection{Consideraciones generales}
+\label{ssec:consideraciones_generales}
+Para la medida del rendimiento y perfilado se ha generado dos redes neuronales de gran tamaño, una densa con capas completamente conexas con anchos tal que \{capa de entrada, 9 capas ocultas, capa de salida\} = \{24, 500, 800, 1000, 1200, 600, 400, 200, 100, 50, 1\}, y varias redes dispersas basadas en esta primera, con índices de dispersión del 60\%, 70\%, 80\%, 85\%, 90\%, 95\% y 99\%. Estos tamaños no se han seleccionado de forma arbitraria, sino que responden a los índices de dispersión alrededor de los cuales se maximiza el rendimiento y precisión con redes correctamente diseñadas y entrenadas \cite[Figura 4]{hoefler2102sparsity}. Evidentemente, para el problema que se pretende resolver, estas redes están muy sobredimensionadas, siendo en la práctica inútiles en su cometido, puesto que debido a su enorme tamaño, y a la saturación del graditente que se consigue mediante el uso de la función de transferencia sigmoide, lo único que aprenden durante el proceso de entrenamiento es a marcar como positivos todos los \textit{inputs}.
 
-Esto, que para un ingeniero en inteligencia artificial es un enorme fracaso, en este ámbito es algo completamente indiferente, ya que a pesar de la inutilidad de la red creada, ésta sigue realizando las cargas de trabajo típicas de una red neuronal adecuada. Esto es, la red tiene que multiplicar matrices, sumar los \textit{bias} y aplicar las funciones de transferencia.
+Esto, que para un ingeniero en inteligencia artificial no posee utilidad práctica, en cuanto a la medida del rendimiento del proceso de inferencia es algo completamente indiferente, ya que, a pesar de la inutilidad de la red creada, esta sigue realizando las cargas de trabajo típicas de una red neuronal adecuada. Esto es, la red tiene que multiplicar matrices, sumar los \textit{bias} y aplicar las funciones de transferencia.
 
-En todas las ejecuciones se emplean los mismos datos de entrada replicados $n$, basados en el fichero \texttt{input.txt} generado con la función tratada en el Punto 3 de la Sección \ref{ssec:extraccion_valores}. En concreto, estos datos se replican 100 y 1000 veces, para obtener $1000 \times 100 = 100000$ y $1000 \times 1000 = 1000000$ datos de entrada.
+En todas las ejecuciones se han empleado los mismos datos de entrada, basados en el fichero \texttt{input.txt} generado con la función tratada en el punto 3 de la Sección \ref{ssec:extraccion_valores}. En concreto, estos datos exportados se replican 100 y 1000 veces, para obtener un total de $1000 \times 100 = 100000$ y $1000 \times 1000 = 1000000$ datos de entrada.
 
 \subsection{Medida del rendimiento}
 \label{ssec:medida_rendimiento_metodologia}
-Para la medida del rendimiento se emplea el reloj monotónico del sistema mediante la función \texttt{clock\_gettime(CLOCK\_MONOTONIC\_RAW, \&timestamp)} en compilaciones de \textit{release} (opción \texttt{-s} o \textit{strip}). Se realizan cinco ejecuciones para cada red y \textit{sparsity}, y se guarda la salida de \texttt{stdout} con el script \texttt{run\_tests.sh}:\medskip
+Para la medida del rendimiento se ha empleado el reloj monotónico del sistema mediante la función \texttt{clock\_gettime(CLOCK\_MONOTONIC\_RAW, \&timestamp)}, mediante la cual se miden los tiempos en un total de cinco ejecuciones para compilaciones de \textit{release} (opción \texttt{-s} o \textit{strip}). De estas cinco ejecuciones por cada red e índice de dispersión, se guarda la salida de \texttt{stdout} con el script \texttt{run\_tests.sh}\footnote{Este script también se puede encontrar bajo la carpeta \texttt{res/scripts/} en la raíz del proyecto}:\medskip
 \begin{lstlisting}[language=bash]
 #!/bin/sh
 mkdir -p logs
@@ -37,14 +37,14 @@ done
 done  
 \end{lstlisting}
 
-Las ejecuciones para medición de tiempos se realizan en la partición \texttt{compute2} del clúster Plutón\footnote{\url{https://pluton.dec.udc.es/guide/user-guide.pdf}}, con características visibles en la Tabla \ref{tb:especificaciones_compute2}. Los perfilados, sin embargo, se realizan en un equipo Xiaomi Mi Notebook 15 con las características visibles en la Tabla \ref{tb:especificaciones_xiaomi}.
+Las ejecuciones para la medición de tiempos se han llevado a cabo en la partición \texttt{compute2} del clúster Plutón\footnote{\url{https://pluton.dec.udc.es/guide/user-guide.pdf}}, cuyas características se muestran en la Tabla \ref{tb:especificaciones_compute2}. Los perfilados, sin embargo, gracias a la similitud de las arquitecturas de CPU entre los equipos, y debido a que el uso de que la última versión de la suite de Intel oneAPI no es posible en los equipos de Plutón, se realizan en un equipo Xiaomi Mi Notebook 15 con las características indicadas en la Tabla \ref{tb:especificaciones_xiaomi}. Las librerías \texttt{OpenBLAS} y \texttt{librsb} han sido compiladas en ambos equipos con las mismas opciones de compilación y versiones de GCC lo más parecidas posible.
 \begin{table}[htpb]
 \centering
 \begin{tabular}{|c|c|}
     \hline
     CPU & 2x Intel Xeon Silver 4216 (2x16C/32T) @ 3.2GHz\\\hline
     RAM & 256GB DDR4 2933Mhz (8 $\times$ 32GB)\\\hline
-    Sistema & CentOS Linux release 7.9.2009 (Core) \\\hline
+    S.O. & CentOS Linux release 7.9.2009 (Core) \\\hline
     Kernel & 3.10.0-1160.76.1.el7.x86\_64 \\\hline
     CC & gcc 9.3.0\\\hline
     OpenBLAS & OpenBLAS 0.3.21\\\hline
@@ -59,7 +59,7 @@ Las ejecuciones para medición de tiempos se realizan en la partición \texttt{c
     \hline
     CPU & 11th Gen Intel Core i7-11370H (4C/8T) @ 3.3GHz\\\hline
     RAM & 16GB DDR4 3200MHz (\textit{Row-of-chips} {\small$\approx$} 2 $\times$ 8GB)\\\hline
-    Sistema & Ubuntu 20.04.5 LTS\\\hline
+    S.O. & Ubuntu 20.04.5 LTS\\\hline
     Kernel & 5.15.0-50-generic \\\hline
     CC & gcc 9.4.0\\\hline
     OpenBLAS & OpenBLAS 0.3.21\\\hline
@@ -71,9 +71,9 @@ Las ejecuciones para medición de tiempos se realizan en la partición \texttt{c
 
 \subsection{Análisis y perfilado}
 \label{ssec:analisis_perfilado_metodologia}
-Para el análisis y perfilado se emplea el programa Intel Advisor, el cual permite realizar modelos \textit{roofline} de partes individualizadas de programas, incluyendo las funciones de su librería \acrshort{mkl} (\textit{\acrlong{mkl}}). Esto es especialmente útil para perfilar tanto la implementación densa, que emplea funciones de \texttt{cblas} ampliamente utilizadas, así como la \textit{point-to-point}, que no emplea ninguna llamada a librería.
+Para el análisis y perfilado se ha empleado el programa Intel Advisor, el cual permite realizar modelos \textit{roofline} de partes individualizadas de programas, incluyendo las funciones de su librería \acrshort{mkl} (\textit{\acrlong{mkl}}). Esto es especialmente útil para perfilar tanto la implementación densa, que emplea funciones de \texttt{cblas} ampliamente utilizadas, como la \textit{point-to-point}, que no emplea ninguna llamada a librería.
 
-Sin embargo, esta universalidad se pierde con la versión dispersa (\textit{sparse}), ya que se emplean funciones \textit{built-in} de \texttt{OpenBLAS}, así como funciones propias de \texttt{librsb}, lo que hace que cambiar a la \acrshort{mkl} requiera una reprogramación de ciertas líneas del código para poder perfilar las funciones de librería con Intel Advisor. Esto es algo costoso que inicialmente puede parecer un problema, pero es un trabajo que se puede evitar si se razona con respecto al modelo \textit{roofline} de la versión densa.
+Sin embargo, esta universalidad se pierde con la versión dispersa (\textit{sparse}), ya que se emplean funciones \textit{built-in} de \texttt{OpenBLAS}, así como funciones propias de \texttt{librsb}, lo que hace que cambiar a la librería \acrshort{mkl} requiera una reprogramación de ciertas líneas del código para poder perfilar las funciones de librería con Intel Advisor. Esta necesidad de reprogramación es algo costoso que inicialmente puede parecer un problema, pero que se puede solucionar sin hacerlo razonando con respecto al modelo \textit{roofline} de la versión densa, como se explica en la Subsección \ref{ssec:codigo_sparse_perfilado}.
 
 \subsection{Compilación}
 \label{ssec:compilacion_metodologia}
@@ -283,6 +283,7 @@ Así, se puede apreciar que la mejoría del speedup con un \textit{dataset} 10 v
 En esta sección se muestran las características de cada carga de trabajo con ayuda de Intel Advisor, y se razonan los posibles resultados que no se han podido obtener debido a limitaciones en el análisis.
 
 \subsection{Código denso}
+\label{ssec:codigo_denso_perfilado}
 Los resultados obtenidos para la red neuronal densa son, tal como se espera de una librería de BLAS de amplio uso como \texttt{OpenBLAS}, excelentes. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se muestra en el modelo \textit{roofline} en la Figura \ref{fig:roofline_dense}, los resultados obtiene la Intel MKL son extrapolables por similitud en los tiempos a los de \texttt{OpenBLAS}.
 
 \begin{figure}[h!]
@@ -304,6 +305,7 @@ Fijándose con atención se pueden ver funciones con un considerablemente menor 
 \end{figure}
 
 \subsection{Código \textit{sparse}}
+\label{ssec:codigo_sparse_perfilado}
 Por otro lado, los resultados obtenidos para la red neuronal dispersa, y tal como se comenta previamente, algo decepcionantes. En este caso, debido al empleo de la librería \texttt{librsb}, el modelo \textit{roofline} no contiene información de utilidad (Figura \ref{fig:roofline_sparse_details}). Esto, que a todas luces es un problema, deja de serlo si se realiza un sencillo razonamiento.
 
 \begin{figure}[h!]
@@ -338,6 +340,7 @@ Estos decepcionantes resultados, sin embargo, motivan la creación de arquitectu
 
 
 \subsection{Código \textit{point-to-point}}
+\label{ssec:codigo_p2p_perfilado}
 El código \textit{point-to-point} es mucho más demandante a nivel de caché de instrucciones, así como en análisis estático de código, con tiempos de compilación que se acercan a las 24 horas y decenas de gigabytes de memoria RAM empleada durante el proceso de optimización. Esta aproximación, sin embargo, debido a lo que se presenta a continuación, se espera que tenga un amplio margen de mejora, siendo posible vectorizar y reordenar gran parte de las instrucciones mediante el empleo de la herramienta MACVETH\footnote{\url{https://github.com/UDC-GAC/MACVETH}}.
 
 \subsubsection{Compiladores empleados}

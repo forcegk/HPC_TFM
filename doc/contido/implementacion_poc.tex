@@ -318,7 +318,7 @@ typedef union _fp32 {
 
 Así, las funciones implementadas tendrán versiones para flotantes de 32 y 64 bits. El sufijo que indica la precisión del flotante será \texttt{\_\_fp32} y \texttt{\_\_fp64} para 32 y 64 bits de precisión, respectivamente. Las pocas funciones implementadas han sido necesarias para la aplicación del \textit{bias}, y siguen esta nomenclatura con el propósito de mejorar una futura parametrización extra en la generación de código.
 
-Se ha barajado también la posibilidad de emplear funciones genéricas que brinda el compilador gcc, pero al final por simplicidad, y dada la naturaleza estática de una Prueba de Concepto, se ha optado por no incluir estas macros. Un ejemplo para la función \texttt{fast\_sigmoid} sería el siguiente:\medskip
+Se ha barajado también la posibilidad de emplear funciones genéricas que brinda el compilador GCC, pero al final por simplicidad, y dada la naturaleza estática de una Prueba de Concepto, se ha optado por no incluir estas macros. Un ejemplo para la función \texttt{fast\_sigmoid} sería el siguiente:\medskip
 \begin{lstlisting}[language=C]
 #define fast_sigmoid(X) _Generic((X), \
 fp32:fast_sigmoid__fp32, \
@@ -499,11 +499,11 @@ Ahora que se ha visto cómo implementar una arquitectura basada en matrices dens
 
 \begin{enumerate}
     \item Implementar la generación de código \textit{point-to-point}.
-    \item Paralelizar el código generado con directivas OpenMP\footnote{\url{https://www.openmp.org}}.
-    \item Aprovechando la inclusión de OpenMP, se paraleliza también la función \texttt{map\_and\_bias}.
+    \item Paralelizar el código generado con directivas \texttt{OpenMP}\footnote{\url{https://www.openmp.org}}.
+    \item Aprovechando la inclusión de \texttt{OpenMP}, se paraleliza también la función \texttt{map\_and\_bias}.
 \end{enumerate}
 
-Debido a que tanto las operaciones \texttt{FMA} como la función \texttt{map\_and\_bias} son \textit{in-house}, no existe ninguna dependencia más allá de la librería matemática y las estándar, así como del soporte de OpenMP por parte del compilador. Para proceder con estas modificaciones se realizan los siguientes cambios:
+Debido a que tanto las operaciones \texttt{FMA} como la función \texttt{map\_and\_bias} son \textit{in-house}, no existe ninguna dependencia más allá de la librería matemática y las estándar, así como del soporte de \texttt{OpenMP} por parte del compilador. Para proceder con estas modificaciones se realizan los siguientes cambios:
 \begin{enumerate}
     \item La implementación de la generación de código se realiza mediante un nuevo \textit{\gls{backend}} en el \textit{Notebook} (fichero \texttt{.ipynb}), y debido a mejoras en la programación del mismo con respecto a versiones anteriores, se obtiene en un tiempo razonable un código similar al siguiente:\medskip
 \begin{lstlisting}[language=C]
@@ -520,7 +520,7 @@ for(int k = 0; k < input_dim; k++){
     temp_output[4].val += layer1_weights[5].val * temp_input[5].val;
 }
 \end{lstlisting}
-    \item En el código anterior se realiza la multiplicación y suma de los valores estrictamente necesarios para cada capa. Al ser iteraciones independientes sobre cada fila de las matrices de entrada y salida, es muy fácilmente paralelizable con OpenMP. El código auxiliar, como los mensajes de \textit{log} y cálculos de tamaños y \textit{strides} por proceso, también se deben crear o modificar. La implementación de OpenMP se ha realizado además de forma modular, permitiendo que si el código se compila sin soporte de esta librería, el funcionamiento no se vea afectado en absoluto.
+    \item En el código anterior se realiza la multiplicación y suma de los valores estrictamente necesarios para cada capa. Al ser iteraciones independientes sobre cada fila de las matrices de entrada y salida, es muy fácilmente paralelizable con \texttt{OpenMP}. El código auxiliar, como los mensajes de \textit{log} y cálculos de tamaños y \textit{strides} por proceso, también se deben crear o modificar. La implementación de \texttt{OpenMP} se ha realizado además de forma modular, permitiendo que si el código se compila sin soporte de esta librería, el funcionamiento no se vea afectado en absoluto.
     \item El punto anterior implica también una paralelización de la función \texttt{map\_and\_bias}. Los cambios a la estructura del código, incluyendo los cálculos auxiliares mencionados en el punto anterior, se resumen a continuación:\medskip
 \begin{lstlisting}[language=C]
 // En la cabecera se añade
