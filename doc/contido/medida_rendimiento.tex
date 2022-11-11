@@ -113,7 +113,7 @@ icx -xhost -O3 -g3 common.c p2p.c -o p2p.out -lm -fiopenmp
 
 \section{Medida de rendimiento}
 \label{sec:medida_rendimiento}
-En esta sección se muestra una comparación de rendimiento entre las diferentes implementaciones o \textit{\gls{backend}s} para cada \textit{sparsity} y aproximación usada (\texttt{OpenBLAS}, \texttt{librsb} o p2p), basada en medidas obtenidas según la metodología descrita en la Sección \ref{sec:metodologia}.
+En esta sección se muestra una comparación de rendimiento entre las diferentes implementaciones o \textit{backends} para cada \textit{sparsity} y aproximación usada (\texttt{OpenBLAS}, \texttt{librsb} o p2p), basada en medidas obtenidas según la metodología descrita en la Sección \ref{sec:metodologia}.
 
 En primer lugar, en la Figura \ref{fig:rendimiento_100k} se muestran los resultados de \textit{speedup} para 100k datos de entrada. Este \textit{speedup} se calcula comparando el tiempo empleado en la multiplicación de matrices para cada \textit{sparsity} e implementación con respecto al tiempo obtenido empleando \texttt{OpenBLAS}\footnote{Los datos procesados pueden encontrarse en la raíz del proyecto bajo la carpeta \texttt{res/measurements/data\_speedups.xlsx}, así como en crudo en los ficheros comprimidos junto a este.}, tal que:
 \begin{equation}
@@ -348,18 +348,18 @@ Estos decepcionantes resultados, sin embargo, motivan la creación de arquitectu
 El código \textit{point-to-point} es mucho más demandante a nivel de caché de instrucciones, así como en análisis estático de código, con tiempos de compilación que se acercan a las 24 horas y decenas de gigabytes de memoria RAM empleada durante el proceso de optimización. Esta aproximación, sin embargo, se espera que tenga un amplio margen de mejora, siendo posible vectorizar y reordenar gran parte de las instrucciones mediante el empleo de la herramienta MACVETH\footnote{\url{https://github.com/UDC-GAC/MACVETH}} \cite{custom_high_performance_vector_codegen_sparse_computations}.
 
 \subsubsection{Compiladores empleados}
-Para la generación de código \textit{point-to-point} se emplean los compiladores de Intel, ICC e ICX, y el compilador GCC, tal como se comentó en la Subsección \ref{ssec:compilacion_metodologia}.
+Tal como se comentó en la Subsección \ref{ssec:compilacion_metodologia}, para la generación de código \textit{point-to-point} se emplean los compiladores de Intel, ICC e ICX, además del compilador GCC. Debido a que, en este caso, al emplear operaciones estándar de C y no llamadas a librería existe un amplio margen de optimización, resulta interesante observar cómo se comporta GCC al lidiar con diferentes niveles de \textit{sparsity}, así como las diferencias de rendimiento entre los principales compiladores para una \textit{sparsity} fija.
 
 \subsubsection{\textit{Roofline models}}
-Para la misma red que en los códigos anteriores, con GCC, se obtiene el modelo visible en la Figura \ref{fig:roofline_p2p_gcc}.
+Para la misma red que en los códigos anteriores, con GCC, se obtiene el modelo que se muestra en la Figura \ref{fig:roofline_p2p_gcc}.
 \begin{figure}[h!]
     \centering
     \includegraphics[width=\textwidth]{img/rooflines/roofline_p2p_95.png}
-    \caption{\textit{Roofline model} del código \textit{point-to-point}, GCC}
+    \caption{\textit{Roofline model} del código \textit{point-to-point} con GCC (95\% de \textit{sparsity})}
     \label{fig:roofline_p2p_gcc}
 \end{figure}
 
-Por otro lado, para códigos compilados con GCC, con dispersiones del 90\% (\ref{fig:roofline_p2p_gcc_90}) y 99\% (\ref{fig:roofline_p2p_gcc_99}) se obtienen los modelos visibles en la Figura \ref{fig:rooflines_p2p_gcc_90_99}.
+Por otro lado, para códigos compilados con GCC, con dispersiones del 90\% y 99\% se obtienen los modelos de la Figura \ref{fig:rooflines_p2p_gcc_90_99}.
 
 \begin{figure}[htpb]
     \centering
@@ -374,11 +374,11 @@ Por otro lado, para códigos compilados con GCC, con dispersiones del 90\% (\ref
         \label{fig:roofline_p2p_gcc_99}
     \end{subfigure}
 
-    \caption{\textit{Roofline models} de los códigos \textit{point-to-point}, GCC}
+    \caption{\textit{Roofline models} de los códigos \textit{point-to-point} con GCC}
     \label{fig:rooflines_p2p_gcc_90_99}
 \end{figure}
 
-Y por último y como contraste, para las mismas redes al 99\% de índice de dispersión, se recopilan también los modelos de programas compilados con ICC (\ref{fig:roofline_p2p_icc_99}) e ICX (\ref{fig:roofline_p2p_icx_99}) en la Figura \ref{fig:rooflines_p2p_icc_icx_99}.
+Como se puede apreciar, los modelos \textit{roofline} de los códigos \textit{point-to-point} compilados con GCC no son muy diferentes entre ellos, estando todos ellos \textit{memory} y \textit{compute bound}, lo que indica que el código necesita, o bien más ancho de banda a memoria, o bien un patrón de acceso más óptimo, para poder seguir ganando rendimiento a base de potencia bruta de cálculo.
 
 \begin{figure}[htpb]
     \centering
@@ -393,11 +393,13 @@ Y por último y como contraste, para las mismas redes al 99\% de índice de disp
         \label{fig:roofline_p2p_icx_99}
     \end{subfigure}
 
-    \caption{\textit{Roofline models} de los códigos \textit{point-to-point} 99\% con ICC e ICX}
+    \caption{\textit{Roofline models} de los códigos \textit{point-to-point} con ICC e ICX (\textit{sparsity} del 99\%)}
     \label{fig:rooflines_p2p_icc_icx_99}
 \end{figure}
 
-\section{Resultados}
-Los resultados son cuanto menos sorprendentes. El rendimiento de \texttt{OpenBLAS} es fantástico, tal como se espera de una librería de dicha importancia. Por otro lado, \texttt{librsb} rinde particularmente mal. Esto indica que quizás esté pensada para niveles de dispersión varios órdenes de magnitud por encima de lo que se emplea en este trabajo, como por ejemplo para operaciones con matrices empleadas en redes sociales, con una muy elevada cantidad de ceros antes del primer decimal, para, por ejemplo, representar los usuarios que se siguen entre ellos.
+Por último, y como contraste, para las mismas redes al 99\% de \textit{sparsity}, se muestran también los modelos de los códigos compilados con ICC e ICX en la Figura \ref{fig:rooflines_p2p_icc_icx_99}. En este caso, y resultando algo sorprendente, ICC e ICX realizan ambos una optimización muy similar a la de GCC, obteniendo tiempos prácticamente indistinguibles, por lo que a priori no parece obtenerse beneficio con el empleo de estos compiladores. Una diferencia que sí que es importante es que ICX, al estar basado en clang\footnote{\url{https://clang.llvm.org/}}, realiza una compilación mucho más rápida que GCC.
 
-Con respecto a los resultados de códigos \textit{point-to-point}, los tiempos comienzan a superar a los obtenidos por \texttt{OpenBLAS} por encima del 87,5\% de dispersión. Esta \textit{sparsity} resulta algo elevada en el ámbito de las redes reuronales y \textit{deep learning}, aunque todavía queda espacio para mejora mediante vectorización y, sobre todo, un correcto filtrado de lo datos de entrada para una mejor utilización de la memoria caché y una reordenación de operaciones más acertada por parte del compilador y otras posibles herramientas auxiliares (MACVETH).
+\section{Discusión de los resultados}
+Los datos mostrados hasta el momento en este capítulo son cuanto menos sorprendentes. El rendimiento de \texttt{OpenBLAS} es muy bueno, tal como se espera de una librería de dicha importancia. Por otro lado, \texttt{librsb} rinde particularmente mal. Esto indica que quizás esta librería esté orientada a niveles de dispersión varios órdenes de magnitud por encima de los que se utilizan en este trabajo, como por ejemplo para operar con matrices empleadas en redes sociales. Estas matrices cuentan con una muy elevada cantidad de ceros antes del primer decimal, que podrían, entre otros, representar a los usuarios que se siguen entre ellos.
+
+Con respecto a los resultados de los códigos \textit{point-to-point}, los tiempos obtenidos comienzan a ser mejores que los obtenidos por \texttt{OpenBLAS} por encima de aproximadamente el 87,5\% de dispersión. Si bien esta \textit{sparsity} resulta algo elevada en el ámbito de las redes reuronales y \textit{deep learning}, todavía queda espacio para ganar rendimiento mediante vectorización y optimización de los accesos a memoria, en concreto mejorando la reutilización de la memoria caché y reordenando las operaciones de forma más acertada. Esto puede ser conseguido realizando un correcto filtrado de los datos de entrada, así como mediante el uso de herramientas auxiliares como el previamente citado MACVETH.
