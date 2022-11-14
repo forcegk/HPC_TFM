@@ -90,7 +90,7 @@ gcc -march=native -O3 -g3 -DMKL_ILP64 -m64 -I"${MKLROOT}/include" common.c dense
 \end{lstlisting}
 
 \subsubsection{Código \textit{sparse}}
-En este caso, debido al uso de \texttt{librsb} como librería de Sparse BLAS, la herramienta Intel Advisor no es capaz de analizar el código de librería ni compilando la misma con flags de \textit{debug}. Como se comentó previamente, una adaptación a la librería Intel MKL, a pesar de no ser imposible, no es conveniente. Por esto mismo, más adelante en este capítulo se estiman el rendimiento y posibilidades de mejora del código disperso, en función de los resultados con respecto al código denso. Para compilar el código para \textit{release}, la línea de compilación es la siguiente:\medskip
+En este caso, debido al uso de \texttt{librsb} como librería de Sparse \acrshort{blas}, la herramienta Intel Advisor no es capaz de analizar el código de librería ni compilando la misma con flags de \textit{debug}. Como se comentó previamente, una adaptación a la librería Intel MKL, a pesar de no ser imposible, no es conveniente. Por esto mismo, más adelante en este capítulo se estiman el rendimiento y posibilidades de mejora del código disperso, en función de los resultados con respecto al código denso. Para compilar el código para \textit{release}, la línea de compilación es la siguiente:\medskip
 \begin{lstlisting}[language=bash]
 # Para una compilación convencional sin depuración con OpenBLAS, sería necesario únicamente compilar con:
 gcc -march=native -O3 -s common.c dense.c -o sparse.out -lm -lrsb -lopenblas
@@ -290,7 +290,7 @@ En esta sección se muestran las características de cada carga de trabajo (\tex
 
 \subsection{Código denso}
 \label{ssec:codigo_denso_perfilado}
-Los resultados obtenidos para la red neuronal densa son excelentes, tal como se espera de una librería BLAS de amplio uso como \texttt{OpenBLAS}. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se observa en el modelo \textit{roofline} de la Figura \ref{fig:roofline_dense}, los resultados que obtiene la librería Intel MKL son extrapolables, por similitud en los tiempos, a los de \texttt{OpenBLAS}.
+Los resultados obtenidos para la red neuronal densa son excelentes, tal como se espera de una librería \acrshort{blas} de amplio uso como \texttt{OpenBLAS}. Estos resultados se obtienen además realizando un excelente uso de la memoria caché, y tal como se observa en el modelo \textit{roofline} de la Figura \ref{fig:roofline_dense}, los resultados que obtiene la librería Intel MKL son extrapolables, por similitud en los tiempos, a los de \texttt{OpenBLAS}.
 
 \begin{figure}[h!]
     \centering

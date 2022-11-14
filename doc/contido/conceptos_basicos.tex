@@ -122,7 +122,7 @@ R = [ 0 1 2 2 3 ]
 \label{ssec:propiedades_producto_matrices_dispersas}
 Al multiplicar dos matrices densas no hay duda de que como resultado se obtendrá una matriz densa, salvo contadas excepciones, como multiplicar una matriz por su inversa. Sabiendo que el producto de matrices dispersas obtiene el mismo resultado que una multiplicación de matrices densas mediante un algoritmo diferente, se pueden clasificar los productos de matrices en función de su \textit{sparsity} de forma genérica.
 
-Esta clasificación, de nuevo, puede variar en función de las propiedades de la matriz, pero es la base sobre la cual se construyen las funciones de \acrshort{blas} (\textit{\acrlong{blas}}) \cite{netlib_blas} y las implementaciones Sparse BLAS \cite{sparse_blas_10.1145/567806.567810}. De esta forma, se pueden implementar los siguientes tipos de producto de matrices:
+Esta clasificación, de nuevo, puede variar en función de las propiedades de la matriz, pero es la base sobre la cual se construyen las funciones de \acrshort{blas} (\textit{\acrlong{blas}}) \cite{netlib_blas} y las implementaciones Sparse \acrshort{blas} \cite{sparse_blas_10.1145/567806.567810}. De esta forma, se pueden implementar los siguientes tipos de producto de matrices:
 
 \begin{itemize}
     \item Densa $\times$ Densa $=$ Densa ($D\times D$)
@@ -187,7 +187,7 @@ Esta estrategia se puede apreciar en la Figura \ref{fig:nn_matrix_sparse}, donde
 
 \section{Multiplicación de matrices \textit{point-to-point}}
 \label{sec:multiplicacion_point_to_point}
-A pesar de todo lo comentado previamente, el empleo de las funciones que ofrecen Sparse BLAS, Intel MKL\footnote{\url{https://www.intel.com/content/www/us/en/develop/documentation/get-started-with-mkl-for-dpcpp/top.htmlde ver}} y alternativas, no es la única opción para realizar la multiplicación de matrices dispersas. Una buena aproximación es el empleo de una arquitectura \textit{point-to-point}, \textit{fully unrolled} o \textit{data-specific}. Esta arquitectura consiste en \textit{hardcodear} cada una de las operaciones que intervienen en la multiplicación de matrices dispersas con una línea de \texttt{\acrshort{fma}} (\textit{\acrlong{fma}}) por cada valor no cero (\textit{point}) de la matriz.
+A pesar de todo lo comentado previamente, el empleo de las funciones que ofrecen Sparse \acrshort{blas}, Intel MKL\footnote{\url{https://www.intel.com/content/www/us/en/develop/documentation/get-started-with-mkl-for-dpcpp/top.htmlde ver}} y alternativas, no es la única opción para realizar la multiplicación de matrices dispersas. Una buena aproximación es el empleo de una arquitectura \textit{point-to-point}, \textit{fully unrolled} o \textit{data-specific}. Esta arquitectura consiste en \textit{hardcodear} cada una de las operaciones que intervienen en la multiplicación de matrices dispersas con una línea de \texttt{\acrshort{fma}} (\textit{\acrlong{fma}}) por cada valor no cero (\textit{point}) de la matriz.
 
 Para generar dicho código se necesita tener primero una base teórica. Consideremosm el siguiente ejemplo: sean dos matrices $d \times D$, de dimensiones $m \times n$ y $n \times k$, respectivamente, teniendo la matriz dispersa una densidad del 50\%, y siendo $\#nz$ el número de valores \textit{nonzero} en la misma:
 \begin{gather}
