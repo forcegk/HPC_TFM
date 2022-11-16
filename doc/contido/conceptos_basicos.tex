@@ -139,13 +139,13 @@ Así, se pueden obtener las siguientes funciones estándar, a pesar de que en la
     \item \texttt{sp[sdcz]gemm()} o \texttt{spmsp()} para $d\times d$
 \end{itemize}
 
-Sabiendo las características de una red neuronal dispersa, y tal como se comenta más adelante en esta memoria, en la \acrshort{poc} se emplea el producto $d\times D$, debido a la naturaleza dispersa de los pesos, y densa de los datos de entrada. De todas formas, en función de la naturaleza de los datos de entrada, podrían emplearse también vectores de entrada dispersos, aunque lo más probable es que para eso quizás una red neuronal \textit{feed-forward} unidimensional no sea lo más apropiado, y ya se deban sugerir otras arquitecturas de red como las convolucionales, debido a que un vector disperso no suele tener mucho sentido, pero una matriz dispersa sí.
-x
+Sabiendo las características de una red neuronal dispersa, y tal como se comenta más adelante en esta memoria, en la \acrshort{poc} se emplea el producto $d\times D$, debido a la naturaleza dispersa de los pesos, y densa de los datos de entrada. De todas formas, en función de la naturaleza de los datos de entrada, podrían emplearse también vectores de entrada dispersos, aunque lo más probable es que para eso quizás una red neuronal \textit{feed-forward} unidimensional no sea lo más apropiado, y ya se deban sugerir otras arquitecturas de red. Redes como las convolucionales, en las que se opera total o parcialmente con matrices, que pueden ser dispersas, parecen una mejor idea.
+
 \subsection{Visualización de una red neuronal dispersa}
 \label{ssec:visualizacion_nn_dispersa}
 Tal como se mostró en la Sección \ref{sec:redes_reuronales_densas}, es sencillo visualizar el proceso de inferencia como una simple multiplicación de matrices, por lo que una multiplicación con una matriz de pesos dispersa debería ser sencilla de visualizar de forma similar.
 
-Y este razonamiento es correcto, es muy sencilla de visualizar de no ser por un pequeño detalle. Y es que la función de multiplicación de matrices $d\times D$, \texttt{[sdcz]usmm()}, tiene una firma poco genérica, haciendo que, si bien esta función parezca adecuada para esta carga de trabajo, tenga un sutil detalle que requiere un poco de detenimiento. A continuación se muestra para el lenguaje C y para simple precisión la firma y parámetros de la función \texttt{BLAS\_susmm}:
+Este razonamiento es correcto, y es muy sencilla de visualizar de no ser por un pequeño detalle. La función de multiplicación de matrices $d\times D$, \texttt{[sdcz]usmm()}, tiene una firma poco genérica, lo que hace que tenga un sutil detalle que requiere un poco de detenimiento. Si bien la función \texttt{BLAS\_susmm} parece adecuada para esta carga de trabajo, y teniendo en cuenta la firma para el lenguaje C y simple precisión, se puede apreciar este pequeño inconveniente a continuación:
 
 \begin{lstlisting}[language=C]
 int BLAS_susmm( enum blas_order_type    order,
@@ -172,7 +172,7 @@ int BLAS_susmm( enum blas_order_type    order,
  */
 \end{lstlisting}
 
-El inconveniente de esta función, que calcula $C = \alpha AB + C$, es que la matriz $A$ debe ser dispersa, algo que, fijándose de nuevo en la Figura \ref{fig:nn_matrix_dense}, no se cumple. Es decir, la matriz dispersa es la de pesos $w$, por lo que parece necesaria una función que trate a $B$ como una matriz dispersa. Dicha función no existe.
+El problema de esta función, que calcula $C = \alpha AB + C$, es que la matriz $A$ debe ser dispersa, algo que, fijándose de nuevo en la Figura \ref{fig:nn_matrix_dense}, no se cumple. Es decir, la matriz dispersa es la de pesos $w$, por lo que parece necesaria una función que trate a $B$ como una matriz dispersa. Dicha función no existe.
 
 \begin{figure}[h!]
     \centering
@@ -189,7 +189,7 @@ Esta estrategia se puede apreciar en la Figura \ref{fig:nn_matrix_sparse}, donde
 \label{sec:multiplicacion_point_to_point}
 A pesar de todo lo comentado previamente, el empleo de las funciones que ofrecen Sparse \acrshort{blas}, Intel MKL\footnote{\url{https://www.intel.com/content/www/us/en/develop/documentation/get-started-with-mkl-for-dpcpp/top.htmlde ver}} y alternativas, no es la única opción para realizar la multiplicación de matrices dispersas. Una buena aproximación es el empleo de una arquitectura \textit{point-to-point}, que también se podría denominar como \textit{fully unrolled} o \textit{data-specific}. Esta arquitectura consiste en \textit{hardcodear} cada una de las operaciones que intervienen en la multiplicación de matrices dispersas con una línea de \texttt{\acrshort{fma}} (\textit{\acrlong{fma}}) por cada valor no cero (\textit{point}) de la matriz.
 
-Para generar dicho código se necesita tener primero una base teórica. Consideremosm el siguiente ejemplo: sean dos matrices $d \times D$, de dimensiones $m \times n$ y $n \times k$, respectivamente, teniendo la matriz dispersa una densidad del 50\%, y siendo $\#nz$ el número de valores \textit{nonzero} en la misma:
+Para generar dicho código se necesita tener primero una base teórica. Consideremos el siguiente ejemplo: sean dos matrices $d \times D$, de dimensiones $m \times n$ y $n \times k$, respectivamente, teniendo la matriz dispersa una densidad del 50\%, y siendo $\#nz$ el número de valores \textit{nonzero} en la misma:
 \begin{gather}
     \begin{pmatrix}
         0 & d_{12}\\

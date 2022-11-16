@@ -269,7 +269,7 @@ Estos valores, al ser \textit{casteados} a un vector de \texttt{fp32}, pueden se
 
 \subsection{Importación de matrices dispersas}
 \label{ssec:importacion_matrices_dispersas}
-En el caso de las matrices dispersas, el almacenamiento de datos no es tan sencillo. Como se comentó en el Capítulo \ref{chap:conceptos_basicos}, existen múltiples formatos de representación de matrices dispersas en memoria. El formato que se emplea en este caso es el \acrshort{coo}, debido principalmente a la facilidad de programación del código generador (Subsección \ref{ssec:almacenamiento_matrices_dispersas}). Debido a la elección de es formato, es suficiente con importar en el código C una lista de valores, acompañada con las coordenadas de cada uno de ellos. Estos valores, tanto los de la matriz como las coordenadas de los mismos, de la misma forma en que se hizo al importar matrices densas, se guardan en la sección \texttt{.text}.
+En el caso de las matrices dispersas, el almacenamiento de datos no es tan sencillo. Como se comentó en el Capítulo \ref{chap:conceptos_basicos}, existen múltiples formatos de representación de matrices dispersas en memoria. El formato que se emplea en este caso es el \acrshort{coo}, aprovechando así las facilidades que ofrece esta representación en cuanto a programabilidad (ver Subsección \ref{ssec:almacenamiento_matrices_dispersas}). Debido a la elección de este formato, es suficiente con importar en el código C una lista de valores, acompañada con las coordenadas de cada uno de ellos. Estos valores, tanto los de la matriz como las coordenadas de los mismos, de la misma forma en que se hizo al importar matrices densas, se guardan en la sección \texttt{.text}.
 
 Esto significa que, en comparación con la versión densa, el vector de pesos es mucho más pequeño (en función de la densidad de la matriz que representa), y aparecen dos vectores de coordenadas, que identifican las abscisas y ordenadas de cada dato \textit{nonzero}, siendo estos \texttt{i} y \texttt{j}, respectivamente:\medskip
 \begin{lstlisting}[language=C]
@@ -332,7 +332,7 @@ fp64 fast_sigmoid__fp64(fp64);
 
 \subsection{Matrices densas}
 \label{ssec:gdin_matrices_densas}
-La forma más sencilla (y cronológicamente la primera en implementarse) es la basada en matrices densas. Esta implementación se apoya en la ampliamente disponible librería \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}. A pesar de que el proceso de desarrollo, pruebas, automatización y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.()
+La forma más sencilla (y cronológicamente la primera en implementarse) es la basada en matrices densas. Esta implementación se apoya en la ampliamente disponible librería \texttt{OpenBLAS}\footnote{\url{https://www.openblas.net}}. A pesar de que el proceso de desarrollo, pruebas, automatización y corrección de posibles bugs pueda ser algo tedioso, en realidad la teoría es moderadamente simple.
 
 Tal como se comenta en la Sección \ref{sec:redes_reuronales_densas}, el programa debe hacer lo siguiente:
 
@@ -385,7 +385,7 @@ fprintf(stderr, "*** Map and Bias %s with %s function ***\n", "layer1_out", "sig
 map_and_bias__fp32(layer1_out, layer1_bias, input_dim, LAYER1_SIZE, 'N', sigmoid__fp32);
 \end{lstlisting}
 
-    Si bien es cierto que en lugar de aplicar los \textit{bias} junto a la función de transferencia en la función previa, es posible realizar $C = AB + bias$, con una copia de \textit{bias} por fila, es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia, ya que así se obtiene una mayor intensidad aritmética. Esta mayor intensidad es especialmente relevante cuando si paraleliza la función, ya que lo más probable es que \texttt{map\_and\_bias} sea \textit{memory-bound} en mayor o menor medida según la función de transferencia. Además, si se operase sobre una matriz pre-inicializada con los \textit{bias} en cada fila, se necesitaría replicar los valores de \textit{bias} \texttt{input\_dim}\footnote{\texttt{input\_dim} es el número de filas de la entrada, es decir, el número de datos multidimensionales que entran a la red.} veces, replicación que no es gratuita, ya que sería indudablemente \textit{memory-bound}, por lo que es más conveniente fusionar los bucles en uno solo para optimizar los accesos a memoria principal.
+    Si bien es cierto que en lugar de aplicar los \textit{bias} junto a la función de transferencia en la función previa se puede realizar $C = AB + bias$ (con una copia de \textit{bias} por fila), es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia, ya que así se obtiene una mayor intensidad aritmética. Esta mayor intensidad es especialmente relevante cuando se paraleliza la función, ya que lo más probable es que \texttt{map\_and\_bias} sea \textit{memory-bound} en mayor o menor medida según la función de transferencia. Además, si se operase sobre una matriz pre-inicializada con los \textit{bias} en cada fila, se necesitaría replicar los valores de \textit{bias} \texttt{input\_dim}\footnote{\texttt{input\_dim} es el número de filas de la entrada, es decir, el número de datos multidimensionales que entran a la red.} veces, replicación que no es gratuita, ya que sería indudablemente \textit{memory-bound}. Por estas razones es más conveniente fusionar los bucles en uno solo para optimizar los accesos a memoria principal.
 
     Una implementación básica de \texttt{map\_and\_bias} es similar a la siguiente:\medskip
 \begin{lstlisting}[language=C]
@@ -602,7 +602,7 @@ Siguiendo la línea de la subsección anterior, estas implementaciones tanto en 
 \label{sssec:heterogeneas_gpu}
 Como ya se comentó previamente en la Subsección \ref{ssec:posibilidades_en_computo_generalistas}, las GPUs son piezas de hardware excelentes para la inferencia, por lo que contar con una mayor cantidad de ellas en un entorno escalable de memoria distribuida es algo deseable.
 
-Generar código para estos dispositivos, si bien cuenta con sus peculiaridades en la implementación y optimización, sería posible empleando un \textit{backend} para CUDA u OpenCL y similares.
+Generar código para estos dispositivos, si bien cuenta con sus peculiaridades en la implementación y optimización, sería posible empleando un \textit{backend} para CUDA, OpenCL y similares.
 
 \subsubsection{FPGA}
 \label{sssec:heterogeneas_fpga}
