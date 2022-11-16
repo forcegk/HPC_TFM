@@ -139,13 +139,13 @@ Así, se pueden obtener las siguientes funciones estándar, a pesar de que en la
     \item \texttt{sp[sdcz]gemm()} o \texttt{spmsp()} para $d\times d$
 \end{itemize}
 
-Sabiendo las características de una red neuronal dispersa, y tal como se comenta más adelante en esta memoria, en la \acrshort{poc} se emplea el producto $d\times D$, debido a la naturaleza dispersa de los pesos, y densa de los datos de entrada. De todas formas, en función de la naturaleza de los datos de entrada, podrían emplearse también vectores de entrada dispersos, aunque lo más probable es que para eso quizás una red neuronal \textit{feed-forward} unidimensional no sea lo más apropiado, y ya se deban sugerir otras arquitecturas de red. Redes como las convolucionales, en las que se opera total o parcialmente con matrices, que pueden ser dispersas, parecen una mejor idea.
+Sabiendo las características de una red neuronal dispersa, y tal como se comenta más adelante en esta memoria, en la \acrshort{poc} se emplea el producto $d\times D$, debido a la naturaleza dispersa de los pesos, y densa de los datos de entrada. De todas formas, en función de la naturaleza de los datos de entrada, podrían emplearse también vectores de entrada dispersos, aunque lo más probable es que para eso quizás una red neuronal \textit{feed-forward} unidimensional no sea lo más apropiado, y ya se deban sugerir otras arquitecturas de red. Redes como las convolucionales, en las que se opera total o parcialmente con matrices que pueden ser dispersas, parecen una mejor idea.
 
 \subsection{Visualización de una red neuronal dispersa}
 \label{ssec:visualizacion_nn_dispersa}
 Tal como se mostró en la Sección \ref{sec:redes_reuronales_densas}, es sencillo visualizar el proceso de inferencia como una simple multiplicación de matrices, por lo que una multiplicación con una matriz de pesos dispersa debería ser sencilla de visualizar de forma similar.
 
-Este razonamiento es correcto, y es muy sencilla de visualizar de no ser por un pequeño detalle. La función de multiplicación de matrices $d\times D$, \texttt{[sdcz]usmm()}, tiene una firma poco genérica, lo que hace que tenga un sutil detalle que requiere un poco de detenimiento. Si bien la función \texttt{BLAS\_susmm} parece adecuada para esta carga de trabajo, y teniendo en cuenta la firma para el lenguaje C y simple precisión, se puede apreciar este pequeño inconveniente a continuación:
+Este razonamiento es correcto, y es muy sencilla de visualizar de no ser por un pequeño detalle. La función de multiplicación de matrices $d\times D$, \texttt{[sdcz]usmm()}, tiene una firma poco genérica, lo que hace que tenga un sutil detalle que requiere un poco de detenimiento. Si bien la función \texttt{BLAS\_susmm} parece adecuada para esta carga de trabajo, se puede apreciar este pequeño inconveniente en la firma de la función a continuación:
 
 \begin{lstlisting}[language=C]
 int BLAS_susmm( enum blas_order_type    order,
@@ -172,7 +172,7 @@ int BLAS_susmm( enum blas_order_type    order,
  */
 \end{lstlisting}
 
-El problema de esta función, que calcula $C = \alpha AB + C$, es que la matriz $A$ debe ser dispersa, algo que, fijándose de nuevo en la Figura \ref{fig:nn_matrix_dense}, no se cumple. Es decir, la matriz dispersa es la de pesos $w$, por lo que parece necesaria una función que trate a $B$ como una matriz dispersa. Dicha función no existe.
+El problema de \texttt{BLAS\_susmm}, que calcula $C = \alpha AB + C$ en simple precisión, es que la matriz $A$ debe ser dispersa, algo que, fijándose de nuevo en la Figura \ref{fig:nn_matrix_dense}, no se cumple. Es decir, la matriz dispersa es la de pesos $w$, por lo que parece necesaria una función que trate a $B$ como una matriz dispersa. Dicha función no existe.
 
 \begin{figure}[h!]
     \centering
