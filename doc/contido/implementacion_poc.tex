@@ -1,7 +1,7 @@
 \chapter{Desarrollo y Prueba de Concepto}
 \label{chap:desarrollo_poc}
 
-\lettrine{T}{ras} identificar los puntos de intervención y posible mejora, así como habiendo revisado los trabajos ya realizados, en este capítulo se detalla el desarrollo e implementación de una Prueba de Concepto que sirva para generar diferentes códigos C para una misma red neuronal, generada mediante una librería real. Los conceptos de codificación necesarios para la creación de dichos ficheros C, incluyendo las llamadas a librerías, paralelización, etc. se explican de forma incremental y según la arquitectura de la red. Finalmente se discuten otras implementaciones derivadas y sus posibilidades.
+\lettrine{T}{ras} identificar los puntos de intervención y posible mejora, así como habiendo revisado los trabajos ya realizados, en este capítulo se detalla el desarrollo e implementación de una Prueba de Concepto que sirva para generar diferentes códigos C para una misma red neuronal, creada y entrenada con una librería real. Los conceptos de codificación necesarios para la creación de dichos ficheros C, incluyendo las llamadas a librerías, paralelización, etc. se explican de forma incremental y según la arquitectura de la red. Finalmente se discuten otras implementaciones derivadas y sus posibilidades.
 
 Los códigos desarrollados a lo largo de este capítulo, así como el \textit{Notebook}, se pueden encontrar en la raíz del proyecto\footnote{\url{https://github.com/forcegk/HPC_TFM}} bajo las carpetas \texttt{res/} para ficheros de TensorFlow y código C, así como en \texttt{src/\{c,python\}} para el generador y ficheros \texttt{common.\{c,h\}}.
 
@@ -27,14 +27,14 @@ Por esta razón, este proyecto se limita a la extracción para modelos puramente
 
 \subsection{Desde un modelo de pruebas}
 \label{ssec:desde_modelo_de_pruebas}
-Este es el camino más sencillo a la hora de implementar lo que, recordemos, es simplemente un laboratorio básico para poder realizar mediciones y extraer conclusiones.
+Este es el camino más sencillo a la hora de implementar lo que, debe recordarse, es simplemente un laboratorio básico para poder realizar mediciones y extraer conclusiones.
 
 \subsubsection{Fase común}
 \label{sssec:modelo_pruebas_fase_comun}
 A continuación se muestran, por orden de aparición en el \textit{Notebook}, los pasos de entrenamiento de la red:
 
 \begin{enumerate}
-    \item Se importa el conjunto de datos. En este caso se ha optado por el ampliamente utilizado \textit{dataset} \texttt{german\_credit\_numeric}, debido a la simplicidad de sus entradas y salidas, así como por los numerosos ejemplos disponibles para este. El \textit{dataset} cuenta con 1000 datos de entrada de 24 parámetros numéricos cada uno, y se emplea para intentar parametrizar el riesgo crediticio de un individuo mediante redes neuronales:\medskip
+    \item Se importa el conjunto de datos. En este caso se ha optado por el ampliamente utilizado \textit{dataset} \texttt{german\_credit\_numeric}, debido a la simplicidad de sus entradas y salidas, así como por los numerosos ejemplos disponibles para este. El \textit{dataset} cuenta con 1000 datos de entrada de 24 parámetros numéricos cada uno, y se emplea para intentar evaluar el riesgo crediticio de un individuo mediante redes neuronales:\medskip
 \begin{lstlisting}[language=Python]
 ds = tfds.load('german_credit_numeric', split='train', as_supervised=True)
 \end{lstlisting}
@@ -269,7 +269,7 @@ Estos valores, al ser \textit{casteados} a un vector de \texttt{fp32}, pueden se
 
 \subsection{Importación de matrices dispersas}
 \label{ssec:importacion_matrices_dispersas}
-En el caso de las matrices dispersas, el almacenamiento de datos no es tan sencillo. Como se comentó en el Capítulo \ref{chap:conceptos_basicos}, existen múltiples formatos de representación de matrices dispersas en memoria. El formato que se emplea en este caso es el \acrshort{coo}, aprovechando así las facilidades que ofrece esta representación en cuanto a programabilidad (ver Subsección \ref{ssec:almacenamiento_matrices_dispersas}). Debido a la elección de este formato, es suficiente con importar en el código C una lista de valores, acompañada con las coordenadas de cada uno de ellos. Estos valores, tanto los de la matriz como las coordenadas de los mismos, de la misma forma en que se hizo al importar matrices densas, se guardan en la sección \texttt{.text}.
+En el caso de las matrices dispersas, el almacenamiento de datos no es tan sencillo. Como se comentó en el Capítulo \ref{chap:conceptos_basicos}, existen múltiples formatos de representación de matrices dispersas en memoria. El formato que se emplea en este caso es el \acrshort{coo}, aprovechando así las facilidades que ofrece esta representación en cuanto a programabilidad (ver Subsección \ref{ssec:almacenamiento_matrices_dispersas}). Debido a la elección de este formato, es suficiente con importar en el código C una lista de valores, acompañada de las coordenadas de cada uno de ellos. Estos valores, tanto los de la matriz como las coordenadas de los mismos, de la misma forma en la que se hizo al importar matrices densas, se guardan en la sección \texttt{.text}.
 
 Esto significa que, en comparación con la versión densa, el vector de pesos es mucho más pequeño (en función de la densidad de la matriz que representa), y aparecen dos vectores de coordenadas, que identifican las abscisas y ordenadas de cada dato \textit{nonzero}, siendo estos \texttt{i} y \texttt{j}, respectivamente:\medskip
 \begin{lstlisting}[language=C]
@@ -318,7 +318,7 @@ typedef union _fp32 {
 
 Así, las funciones implementadas tendrán versiones para flotantes de 32 y 64 bits. El sufijo que indica la precisión del flotante será \texttt{\_\_fp32} y \texttt{\_\_fp64} para 32 y 64 bits de precisión, respectivamente. Las pocas funciones implementadas han sido necesarias para la aplicación del \textit{bias}, y siguen esta nomenclatura con el propósito de mejorar una futura parametrización extra en la generación de código.
 
-Se ha barajado también la posibilidad de emplear funciones genéricas que brinda el compilador GCC, pero al final por simplicidad, y dada la naturaleza estática de una Prueba de Concepto, se ha optado por no incluir estas macros. Un ejemplo para la función \texttt{fast\_sigmoid} sería el siguiente:\medskip
+Se ha barajado también la posibilidad de emplear funciones genéricas que brinda el compilador GCC, pero al final, por simplicidad, y dada la naturaleza estática de una Prueba de Concepto, se ha optado por no incluir estas macros. Un ejemplo para la función \texttt{fast\_sigmoid} sería el siguiente:\medskip
 \begin{lstlisting}[language=C]
 #define fast_sigmoid(X) _Generic((X), \
 fp32:fast_sigmoid__fp32, \
@@ -385,7 +385,7 @@ fprintf(stderr, "*** Map and Bias %s with %s function ***\n", "layer1_out", "sig
 map_and_bias__fp32(layer1_out, layer1_bias, input_dim, LAYER1_SIZE, 'N', sigmoid__fp32);
 \end{lstlisting}
 
-    Si bien es cierto que en lugar de aplicar los \textit{bias} junto a la función de transferencia en la función previa se puede realizar $C = AB + bias$ (con una copia de \textit{bias} por fila), es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia, ya que así se obtiene una mayor intensidad aritmética. Esta mayor intensidad es especialmente relevante cuando se paraleliza la función, ya que lo más probable es que \texttt{map\_and\_bias} sea \textit{memory-bound} en mayor o menor medida según la función de transferencia. Además, si se operase sobre una matriz pre-inicializada con los \textit{bias} en cada fila, se necesitaría replicar los valores de \textit{bias} \texttt{input\_dim}\footnote{\texttt{input\_dim} es el número de filas de la entrada, es decir, el número de datos multidimensionales que entran a la red.} veces, replicación que no es gratuita, ya que sería indudablemente \textit{memory-bound}. Por estas razones es más conveniente fusionar los bucles en uno solo para optimizar los accesos a memoria principal.
+    Si bien es cierto que en lugar de aplicar los \textit{bias} junto a la función de transferencia en la función previa se puede realizar $C = AB + bias$ (con una copia de \textit{bias} por fila), es mejor realizar esta operación en conjunción con la aplicación de la función de transferencia, ya que así se obtiene una mayor intensidad aritmética. Esta mayor intensidad es especialmente relevante cuando se paraleliza la función, ya que lo más probable es que \texttt{map\_and\_bias} sea \textit{memory-bound} en mayor o menor medida según la función de transferencia. Además, si se operase sobre una matriz pre-inicializada con los \textit{bias} en cada fila, se necesitaría replicar los valores de \textit{bias} \texttt{input\_dim}\footnote{\texttt{input\_dim} es el número de filas de la entrada, es decir, el número de datos multidimensionales que entran a la red.} veces, replicación que no es gratuita, y que sería indudablemente \textit{memory-bound}. Por estas razones es más conveniente fusionar los bucles en uno solo para optimizar los accesos a memoria principal.
 
     Una implementación básica de \texttt{map\_and\_bias} es similar a la siguiente:\medskip
 \begin{lstlisting}[language=C]
@@ -433,7 +433,7 @@ fprintf(stderr, "*** Transposing input out-of-place ***\n");
 cblas_somatcopy(CblasRowMajor, CblasTrans, input_dim, LAYER0_SIZE, 1.f, (float *) input, LAYER0_SIZE, (float *) temp_input, input_dim);
 \end{lstlisting}
 
-    Este procedimiento, que se realiza \textit{out-of-place} por la mejora en rendimiento que supone al transponer matrices no cuadradas, se complementa con lógica básica de punteros previa y posterior a la llamada a función, en la que no es necesario profundizar, pero que hace que esta transposición sea transparente al resto del código. A continuación se muestra como ejemplo el bloque que realiza la transposición de la capa de salida de forma transparente al resto del programa, para una red neuronal de tres capas:\medskip
+    Este procedimiento, que se realiza \textit{out-of-place} por la mejora de rendimiento que supone al transponer matrices no cuadradas, se complementa con lógica básica de punteros previa y posterior a la llamada a función, en la que no es necesario profundizar, pero que hace que esta transposición sea transparente al resto del código. A continuación se muestra como ejemplo el bloque que realiza la transposición de la capa de salida de forma transparente al resto del programa, para una red neuronal de tres capas:\medskip
 \begin{lstlisting}[language=C]
 #if LAYER3_SIZE != 1
 fp32 * temp_output = malloc(input_dim * LAYER3_SIZE * sizeof(fp32));
@@ -480,7 +480,7 @@ BLAS_suscr_insert_entries(layer1_sp_weights, layer1_nz, (float *)
 BLAS_suscr_end(layer1_sp_weights);
 \end{lstlisting}
 
-    \item Finalmente, queda emplear las funciones adecuadas para la mutiplicación de matrices $d\times D$. Este proceso consiste básicamente en sustituir la función \texttt{[sdcz]gemm} por una función \texttt{[sdcz]usmm} (ver Subsección \ref{ssec:propiedades_producto_matrices_dispersas}), así como indicar a la función \texttt{map\_and\_bias} que la matriz de resultados se encuentra transpuesta. Las dimensiones $M$ y $N$ de la matriz original no transpuesta \textit{C} también deben intercambiarse:\medskip
+    \item Finalmente, queda emplear las funciones adecuadas para la multiplicación de matrices $d\times D$. Este proceso consiste básicamente en sustituir la función \texttt{[sdcz]gemm} por una función \texttt{[sdcz]usmm} (ver Subsección \ref{ssec:propiedades_producto_matrices_dispersas}), así como indicar a la función \texttt{map\_and\_bias} que la matriz de resultados se encuentra transpuesta. Las dimensiones $M$ y $N$ de la matriz original no transpuesta \textit{C} también deben intercambiarse:\medskip
 \begin{lstlisting}[language=C]
 fprintf(stderr, "*** SUSMM %s(T) x %s(T) ***\n", "layer3", "layer2");
 BLAS_susmm(blas_rowmajor, blas_trans, input_dim, 1.f, layer3_sp_weights,
@@ -589,7 +589,7 @@ A continuación, se mencionan algunas de las posibilidades que abre esta generac
 \label{ssec:posibilidades_en_computo_generalistas}
 En el campo de la inteligencia artificial, tanto el entrenamiento como la inferencia de redes neuronales están dominados por las \acrshort{gpu}s (\textit{\acrlong{gpu}s}). Estos dispositivos son muy convenientes para las cargas de trabajo que se manejan en \textit{deep learning}, y aportan aceleraciones muy significativas sobre su contraparte en CPU. Sin embargo, los principales fabricantes de CPUs están realizando fuertes inversiones en la adaptación de sus arquitecturas tradicionales para la aceleración de \textit{workloads} de \acrshort{ia}. Fabricantes como Intel y AMD, pero también algunos otros como ARM o Qualcomm investigan para mejorar el rendimiento y, sobre todo en el caso de estos últimos, la eficiencia energética de sus procesadores.
 
-Dada esta situación, y a pesar de que librerías como \texttt{numpy} están altamente optimizadas, es cierto que incorporando la investigación acerca del empaquetamiento de operandos para operaciones con matrices dispersas conducida en \cite{custom_high_performance_vector_codegen_sparse_computations}, es posible que se mejore el rendimiento y consumo energético de una red basada en matrices dispersas en una plataforma de cómputo generalista basada en CPU con extensiones vectoriales (tales como SSE y AVX\footnote{\url{https://en.wikipedia.org/wiki/Advanced\_Vector\_Extensions}} de Intel, o Neon\footnote{\url{https://developer.arm.com/Architectures/Neon}} de ARM).
+Dada esta situación, y a pesar de que librerías como \texttt{numpy} están altamente optimizadas, es cierto que incorporando la investigación acerca del empaquetamiento de operandos para operaciones con matrices dispersas realizada en \cite{custom_high_performance_vector_codegen_sparse_computations}, es posible que se mejore el rendimiento y consumo energético de una red basada en matrices dispersas en una plataforma de cómputo generalista basada en CPU con extensiones vectoriales (tales como SSE y AVX\footnote{\url{https://en.wikipedia.org/wiki/Advanced\_Vector\_Extensions}} de Intel, o Neon\footnote{\url{https://developer.arm.com/Architectures/Neon}} de ARM).
 
 Por esta razón, a pesar de que a día de hoy es difícil mejorar el rendimiento de una red dispersa sin afectar a su precisión, incorporando estas nuevas técnicas se podría obtener o bien una mayor precisión con igual rendimiento, o bien un mayor rendimiento con igual precisión. Además, esta inferencia podría realizarse en entornos de memoria compartida o distribuida, únicamente alterando el correspondiente \textit{backend}.
 
@@ -602,7 +602,7 @@ Siguiendo la línea de la subsección anterior, estas implementaciones tanto en 
 \label{sssec:heterogeneas_gpu}
 Como ya se comentó previamente en la Subsección \ref{ssec:posibilidades_en_computo_generalistas}, las GPUs son piezas de hardware excelentes para la inferencia, por lo que contar con una mayor cantidad de ellas en un entorno escalable de memoria distribuida es algo deseable.
 
-Generar código para estos dispositivos, si bien cuenta con sus peculiaridades en la implementación y optimización, sería posible empleando un \textit{backend} para CUDA, OpenCL y similares.
+Generar código para estos dispositivos, si bien cuenta con sus peculiaridades en la implementación y optimización, sería posible empleando un \textit{backend} para CUDA, ROCm, OpenCL y similares.
 
 \subsubsection{FPGA}
 \label{sssec:heterogeneas_fpga}

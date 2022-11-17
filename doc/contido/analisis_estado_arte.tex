@@ -41,7 +41,7 @@ Como ya se comentó en la Sección \ref{sec:redes_neuronales}, la multiplicació
 
 Tras la multiplicación de matrices, las cargas de trabajo más habituales siguen estando relacionadas con el tamaño del modelo, siendo estas operaciones \textit{elementwise}, es decir, que afectan a elementos individualmente, como la multiplcación, suma o división. Por último, otra gran carga de trabajo, y gran fuente de gasto de energía, es el movimiento de datos en memoria.
 
-Solventar estos problemas no es tarea trivial. Ignorando la cada vez menos presente Ley de Moore, mediante la cual los microchips tienden a ser cada vez más pequeños, y por tanto más eficientes energéticamente, una reducción o estancamiento en el tamaño de las redes no es una solución asumible. Sin embargo, que las redes no se puedan reducir en tamaño manteniendo el mismo esquema de conexiones denso no implica que no se pueda conservar el tamaño de la red, alterando el esquema de conexiones. Es aquí donde las redes neuronales dispersas comienzan a destacar como una opción con menor número de FLOPs y, por tanto, con menor consumo teórico de energía.
+Solventar estos problemas no es tarea trivial. Teniendo en cuenta que la Ley de Moore, mediante la cual los microchips tienden a ser cada vez más pequeños y por tanto más eficientes energéticamente, está perdiendo tracción año tras año conforme la industria se acerca al límite teórico del silicio, una reducción o estancamiento en el tamaño de las redes no es una solución asumible. Sin embargo, que las redes no se puedan reducir en tamaño manteniendo el mismo esquema de conexiones denso no implica que no se pueda conservar el tamaño de la red, alterando el esquema de conexiones. Es aquí donde las redes neuronales dispersas comienzan a destacar como una opción con menor número de FLOPs y, por tanto, con menor consumo teórico de energía.
 
 \subsection{Podado y redes dispersas}
 \label{ssec:podado_y_redes_dispersas}
@@ -56,11 +56,11 @@ Mediante el proceso de podado, una red neuronal puede ver enormemente mejorado s
     \label{fig:grafica_sparse_vs_dense}
 \end{figure}
 
-Como se puede observar, en el correcto podado de redes neuronales se puede encontrar una posible solución a la elevada potencia de cómputo necesaria para la ejecución de las mismas. Sin embargo, el podado solamente ofrece resultados extraordinarios con precisiones extraordinariamente bajas, siendo deseable un equilibrio entre rendimiento y precisión. Este comportamiento, sin embargo, no debe ser desmotivador, puesto que con las herramientas, profesionales, e investigación adecuados, estas tecnologías basadas en redes neuronales dispersas probablemente tengan un amplio margen de mejora mediante optimizaciones, arquitecturas y procesos de entrenamiento específicos.
+Como se puede observar, en el correcto podado de redes neuronales se puede encontrar una posible solución a la elevada potencia de cómputo necesaria para la ejecución de las mismas. Sin embargo, el podado solamente ofrece resultados extraordinarios con precisiones extraordinariamente bajas, siendo deseable un equilibrio entre rendimiento y precisión. Este comportamiento no debe ser desmotivador, puesto que con las herramientas, profesionales, e investigación adecuados, estas tecnologías basadas en redes neuronales dispersas probablemente tengan un amplio margen de mejora mediante optimizaciones, arquitecturas y procesos de entrenamiento específicos.
 
 \subsection{XPU: \textit{X Processing Unit}}
 \label{ssec:xpu}
-Otra posible vía de mejora de esta eficiencia es mediante la creación de circuitos de aplicación específica para inferencia, un camino muchísimo más barato de señalar que de realizar.
+Otra posible vía de mejora de esta eficiencia es mediante la creación de circuitos de aplicación específica para inferencia, un camino muchísimo más barato de señalar que de recorrer.
 
 Un circuito de aplicación específica o \acrshort{asic} (\textit{\acrlong{asic}}) por sus siglas en inglés es probablemente lo más alto que se puede llegar en cuanto a eficiencia de cómputo de un \textit{workload}, pero también es lo que incurre en más gastos derivados de su desarrollo. Estos costes se sitúan en los (miles de) millones de euros, y el proceso de diseño es especializado, costoso, y muy punitivo si se descubren errores graves en el diseño. Es por esto que diseñar un \acrshort{asic} para inferencia es una tarea al alcance de muy pocos.
 

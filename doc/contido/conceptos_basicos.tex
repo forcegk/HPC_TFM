@@ -1,7 +1,7 @@
 \chapter{Conceptos básicos}
 \label{chap:conceptos_basicos}
 
-\lettrine{P}{ara} una correcta comprensión de los objetivos de este trabajo, tanto a corto como a largo plazo, es necesario poseer una serie de conceptos básicos relacionados con las redes neuronales, su estructura, rendimiento y cómo se implementan en un procesador moderno, para posteriormente poder comprender las mejoras propuestas a continuación.
+\lettrine{P}{ara} una correcta comprensión de los objetivos de este trabajo, tanto a corto como a largo plazo, es necesario conocer una serie de conceptos básicos relacionados con las redes neuronales, su estructura, rendimiento y cómo se implementan en un procesador moderno, para posteriormente poder comprender las mejoras propuestas a continuación.
 
 \section{Redes neuronales}
 \label{sec:redes_neuronales}
@@ -30,7 +30,7 @@ En la Figura \ref{fig:dense_nn_sample}\footnote{Imagen generada con la herramien
 
 Por el contrario, como se puede ver en la Figura \ref{fig:sparse_nn_sample}, existen las redes neuronales dispersas, en las que una cantidad significativa de los pesos tienen valor cero. Estas redes se pueden obtener de múltiples formas, y sus objetivos son variados, a pesar de que el principal objetivo es reducir el tamaño del modelo.
 
-Uno de los posibles métodos para la obtención de una red neuronal dispersa (\textit{sparse}) es mediante el podado o \textit{pruning}. Este método, sorprendentemente similar al empleado por neurocirujanos durante operaciones a cerebro abierto, consiste en ir cortando conexiones de forma más o menos arbitraria (en función del algoritmo) y observando cómo varía la salida. En caso de que la salida sea correcta, se continúa en esa dirección. Para que un cambio en una red neuronal se considere inapreciable, la salida debe verse alterada de tal forma que sea indistinguible su efecto del de unos diferentes parámetros iniciales durante el entrenamiento, lo cual implica que será corregible mediante un reentrenamiento. Esta variación se mide con la métrica \textit{\acrlong{itn}} o \acrshort{itn} \cite[4.1.1]{deep_learning_for_computer_architects}.
+Uno de los posibles métodos para la obtención de una red neuronal dispersa (\textit{sparse}) es mediante el podado o \textit{pruning}. Este método, sorprendentemente similar al empleado por neurocirujanos durante operaciones a cerebro abierto, consiste en ir cortando conexiones de forma más o menos arbitraria (en función del algoritmo) y observando cómo varía la salida. En caso de que la salida sea correcta, se continúa en esa dirección. Para que un cambio en una red neuronal se considere inapreciable, la salida debe verse alterada de tal forma que sea indistinguible su efecto del de unos diferentes parámetros iniciales durante el entrenamiento. Esto implica que este ``ruido'' será corregible mediante un reentrenamiento y se mide con la métrica \textit{\acrlong{itn}} o \acrshort{itn} \cite[4.1.1]{deep_learning_for_computer_architects}.
 
 De esta forma, una red neuronal dispersa puede contener alrededor de un 80-90\% menos de conexiones entre neuronas, representando esto un ahorro sustancial de energía en términos de acceso a memoria, relevante en sistemas miniaturizados donde cada milivatio cuenta.
 
@@ -65,7 +65,7 @@ Como se comentó en la sección anterior, independientemente del número de capa
 
 De esta forma, para la ejecución (inferencia) de una red neuronal densa \textit{feed-forward}, serán necesarias únicamente una simple multiplicación de matrices, una suma de matrices para tener en cuenta los \textit{bias}, y la aplicación de una función de transferencia.
 
-Esto se puede apreciar en la Figura \ref{fig:nn_matrix_dense}\footnote{Imágenes con este estilo se han obtenido y modificado de \url{https://ml-cheatsheet.readthedocs.io/en/latest/forwardpropagation.html}}. En ella se puede ver el procesod de inferencia de 4 datos bidimensionales, correspondientes con el número de filas de entrada a las capas. Como también se puede apreciar, la anchura de cada capa se corresponde con el número de columnas de la misma. 
+Esto se puede apreciar en la Figura \ref{fig:nn_matrix_dense}\footnote{Imágenes con este estilo se han obtenido y modificado de \url{https://ml-cheatsheet.readthedocs.io/en/latest/forwardpropagation.html}}. En ella se puede ver el proceso de inferencia de 4 datos bidimensionales, correspondientes con el número de filas de entrada a las capas. Como también se puede apreciar, la anchura de cada capa se corresponde con el número de columnas de la misma.
 
 \begin{figure}[h!]
     \centering
@@ -87,7 +87,7 @@ A esta función se le puede añadir el \textit{bias} de forma explícita ($\sum\
 
 \section{Redes neuronales dispersas}
 \label{sec:redes_reuronales_dispersas}
-Las redes neuronales dispersas cuentan con una ventaja, y es el menor número de conexiones entre neuronas, o directamente el menor número de neuronas en la arquitectura. A pesar de esto, en realidad el fundamento matemático es el mismo, una simple multiplicación de matrices. Sin embargo, a pesar de tener el mismo funcionamiento base, se pueden explotar ciertas características, tanto de la estructura de las matrices dispersas como de su multiplicación, para obtener mejoras tanto en el tamaño del modelo como en su rendimiento, respectivamente.
+Las redes neuronales dispersas cuentan con una ventaja, y es el menor número de conexiones entre neuronas, o directamente el menor número de neuronas en la arquitectura. A pesar de esto, en realidad el fundamento matemático es el mismo, una simple multiplicación de matrices. Sin embargo, y aunque tengan el mismo funcionamiento base que su contraparte densa, se pueden explotar ciertas características, tanto de la estructura de las matrices dispersas como de su multiplicación, para obtener mejoras tanto en el tamaño del modelo como en su rendimiento, respectivamente.
 
 \subsection{Fundamentos de matrices dispersas}
 \label{ssec:fundamentos_matrices_dispersas}
@@ -187,9 +187,9 @@ Esta estrategia se puede apreciar en la Figura \ref{fig:nn_matrix_sparse}, donde
 
 \section{Multiplicación de matrices \textit{point-to-point}}
 \label{sec:multiplicacion_point_to_point}
-A pesar de todo lo comentado previamente, el empleo de las funciones que ofrecen Sparse \acrshort{blas}, Intel MKL\footnote{\url{https://www.intel.com/content/www/us/en/develop/documentation/get-started-with-mkl-for-dpcpp/top.htmlde ver}} y alternativas, no es la única opción para realizar la multiplicación de matrices dispersas. Una buena aproximación es el empleo de una arquitectura \textit{point-to-point}, que también se podría denominar como \textit{fully unrolled} o \textit{data-specific}. Esta arquitectura consiste en \textit{hardcodear} cada una de las operaciones que intervienen en la multiplicación de matrices dispersas con una línea de \texttt{\acrshort{fma}} (\textit{\acrlong{fma}}) por cada valor no cero (\textit{point}) de la matriz.
+A pesar de todo lo comentado previamente, el empleo de las funciones que ofrecen Sparse \acrshort{blas}, Intel MKL\footnote{\url{https://www.intel.com/content/www/us/en/develop/documentation/get-started-with-mkl-for-dpcpp/top.htmlde ver}} y alternativas, no es la única opción para realizar la multiplicación de matrices dispersas. Una buena aproximación es el empleo de una arquitectura \textit{point-to-point}, que también se podría denominar como \textit{fully unrolled} o \textit{data-specific}. Esta arquitectura consiste en \textit{hardcodear} cada una de las operaciones que intervienen en la multiplicación de matrices dispersas con una línea de \texttt{\acrshort{fma}} (\textit{\acrlong{fma}}) por cada valor \textit{nonzero} (\textit{point}) de la matriz.
 
-Para generar dicho código se necesita tener primero una base teórica. Consideremos el siguiente ejemplo: sean dos matrices $d \times D$, de dimensiones $m \times n$ y $n \times k$, respectivamente, teniendo la matriz dispersa una densidad del 50\%, y siendo $\#nz$ el número de valores \textit{nonzero} en la misma:
+Para generar dicho código se necesita tener primero una base teórica. Considérese el siguiente ejemplo: sean dos matrices $d \times D$, de dimensiones $m \times n$ y $n \times k$, respectivamente, teniendo la matriz dispersa una densidad del 50\%, y siendo $\#nz$ el número de valores \textit{nonzero} en la misma:
 \begin{gather}
     \begin{pmatrix}
         0 & d_{12}\\
@@ -274,7 +274,7 @@ A su vez, en la Tabla \ref{tab:w_matrix_memory_layout} se puede ver la disposici
     \label{tab:w_matrix_memory_layout}
 \end{table}
 
-Como el almacenamiento de matrices e C es por filas, se pueden tomar punteros al inicio de cada una de las filas en las matrices $x^{D}$ y $out^{D}$ y repetir esta secuencia $k$ veces. Es importante recordar que, aunque los accesos a la matriz $w^{d}$ sean aleatorios, sus valores son accedidos secuencialmente. De esta forma, se recorre cada una de las entradas de la \acrshort{lut}, tomando cada índice etiquetado con $\sharp$, $\flat$ y $\natural$ en la Tabla \ref{tab:lut_example} tal como se indica a continuación:
+Como el almacenamiento de matrices en C es por filas, se pueden tomar punteros al inicio de cada una de las filas en las matrices $x^{D}$ y $out^{D}$ y repetir esta secuencia $k$ veces. Es importante recordar que, aunque los accesos a la matriz $w^{d}$ sean aleatorios debido a su naturaleza dispersa, los valores de su versión compacta sí son accedidos secuencialmente. De esta forma, se recorre cada una de las entradas de la \acrshort{lut}, tomando cada índice etiquetado con $\sharp$, $\flat$ y $\natural$ en la Tabla \ref{tab:lut_example} tal como se indica a continuación:
 
 \begin{center}
     $out = base\_out + m*num\_iteracion$\\
