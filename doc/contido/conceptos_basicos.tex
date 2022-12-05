@@ -5,11 +5,11 @@
 
 \section{Redes neuronales}
 \label{sec:redes_neuronales}
-Las redes neuronales constituyen la base de la mayoría de los últimos avances en el campo de la inteligencia artificial. A pesar de la enorme diversidad en \textit{layouts} de capas, neuronas, funciones de transferencia, etc., la realidad es que el álgebra lineal y la multiplicación de matrices son parte fundamental e imprescindible para la ejecución de las mismas \cite[Figura 3.4]{deep_learning_for_computer_architects}.
+Las redes neuronales constituyen la base de la mayoría de los últimos avances en el campo de la inteligencia artificial. A pesar de la enorme diversidad en \textit{layouts} de capas, neuronas, funciones de transferencia, etc., la realidad es que el álgebra lineal y la multiplicación de matrices (así como de tensores) son parte fundamental e imprescindible para la ejecución de las mismas \cite[Figura 3.4]{deep_learning_for_computer_architects}.
 
 A pesar de que en la Prueba de Concepto (\acrlong{poc} o \acrshort{poc} por sus siglas en inglés) expuesta en el Capítulo \ref{chap:desarrollo_poc} se trabaja únicamente con redes \textit{feed-forward}, sería naíf pensar que solamente existen estas arquitecturas de redes neuronales. Ejemplos a destacar pueden ser las redes convolucionales, empleadas principalmente para el procesado de imágenes, las basadas en modelos secuenciales o en \textit{transformers}, que están revolucionando el mundo de la inteligencia artificial mediante modelos de procesamiento del lenguaje o de generación de imágenes, así como muchas otras como las redes GAN, o las basadas en arquitecturas \textit{encoder-decoder}.
 
-Estas arquitecturas son llamadas de redes neuronales, a pesar de que, como es evidente, una neurona no puede como tal ``ejecutar'' una convolución. Más bien, estas nuevas arquitecturas se basan en la modelación de operaciones matemáticas complejas en pasos discretos, como por ejemplo la convolución anteriormente mencionada.
+Estas arquitecturas son llamadas de redes neuronales, a pesar de que, como es evidente, una neurona no puede como tal ``ejecutar'' una convolución. Más bien, estas nuevas arquitecturas se basan en el modelado de operaciones matemáticas complejas en pasos discretos, como por ejemplo la convolución anteriormente mencionada.
 
 \subsection{Estructura de una red neuronal \textit{feed-forward}}
 \label{ssec:estructura_red_neuronal_ff}
@@ -28,9 +28,9 @@ En la Figura \ref{fig:dense_nn_sample}\footnote{Imagen generada con la herramien
     \label{fig:dense_nn_sample}
 \end{figure}
 
-Por el contrario, como se puede ver en la Figura \ref{fig:sparse_nn_sample}, existen las redes neuronales dispersas, en las que una cantidad significativa de los pesos tienen valor cero. Estas redes se pueden obtener de múltiples formas, y sus objetivos son variados, a pesar de que el principal objetivo es reducir el tamaño del modelo.
+Por el contrario, como se puede ver en la Figura \ref{fig:sparse_nn_sample}, existen las redes neuronales dispersas, en las que una cantidad significativa de los pesos tienen valor cero. Estas redes se pueden obtener de múltiples formas, y sus objetivos son variados, a pesar de que el principal suele ser reducir el tamaño del modelo.
 
-Uno de los posibles métodos para la obtención de una red neuronal dispersa (\textit{sparse}) es mediante el podado o \textit{pruning}. Este método, sorprendentemente similar al empleado por neurocirujanos durante operaciones a cerebro abierto, consiste en ir cortando conexiones de forma más o menos arbitraria (en función del algoritmo) y observando cómo varía la salida. En caso de que la salida sea correcta, se continúa en esa dirección. Para que un cambio en una red neuronal se considere inapreciable, la salida debe verse alterada de tal forma que sea indistinguible su efecto del de unos diferentes parámetros iniciales durante el entrenamiento. Esto implica que este ``ruido'' será corregible mediante un reentrenamiento y se mide con la métrica \textit{\acrlong{itn}} o \acrshort{itn} \cite[4.1.1]{deep_learning_for_computer_architects}.
+Uno de los posibles métodos para la obtención de una red neuronal dispersa (\textit{sparse}) es mediante el podado o \textit{pruning}. Este método, sorprendentemente similar al empleado por neurocirujanos durante operaciones a cerebro abierto, consiste en ir cortando conexiones de forma más o menos arbitraria (en función del algoritmo) y observando cómo varía la salida. En caso de que la salida sea correcta, se continúa en esa dirección. Para que un cambio en una red neuronal se considere inapreciable, la salida debe verse alterada de tal forma que sea indistinguible su efecto del de emplear unos parámetros iniciales diferentes durante el entrenamiento. Esto implica que este ``ruido'' será corregible mediante un reentrenamiento y se mide con la métrica \textit{\acrlong{itn}} o \acrshort{itn} \cite[4.1.1]{deep_learning_for_computer_architects}.
 
 De esta forma, una red neuronal dispersa puede contener alrededor de un 80-90\% menos de conexiones entre neuronas, representando esto un ahorro sustancial de energía en términos de acceso a memoria, relevante en sistemas miniaturizados donde cada milivatio cuenta.
 
@@ -52,7 +52,7 @@ El \textit{boom} de la inteligencia artificial en los últimos años viene dado 
 Y es que dentro de las infinitas posibilidades que nos ofrecen las neuronas artificiales tratadas anteriormente, existe la posibilidad de apilar capa sobre capa, obteniendo con cada capa extra comportamientos y patrones más complejos.
 Es precisamente este comportamiento de los sistemas no lineales el que permite reproducir comportamientos exóticos al aumentar el número de neuronas y/o capas (y por tanto la complejidad) del sistema.
 
-Tras sospechas previas de algunos investigadores como George Cybenko acerca de que una red neuronal con al menos una capa oculta es un aproximador universal, y tras demostrar dicho comportamiento para la sigmoide como función de transferencia \cite{cybenko1989approximation}, Kurt Hornik demostró en 1991 que una red neuronal de con al menos una capa oculta es siempre un aproximador universal, independientemente de la función de transferencia, siempre que esta sea no polinomial. A pesar de que una red neuronal de una sola capa oculta pueda ser un aproximador universal, se obtienen aproximaciones mucho más inteligentes y ``económicas'' computacionalmente al contar con más de una capa oculta \cite{hornik1991approximation}, donde el máximo exponente de esta doctrina es precisamente el \textit{deep learning}.
+Tras sospechas previas de algunos investigadores como George Cybenko acerca de que una red neuronal con al menos una capa oculta es un aproximador universal, y tras demostrar dicho comportamiento para la sigmoide como función de transferencia \cite{cybenko1989approximation}, Kurt Hornik demostró en 1991 que una red neuronal con al menos una capa oculta es siempre un aproximador universal, independientemente de la función de transferencia, siempre que esta sea no polinómica. A pesar de que una red neuronal de una sola capa oculta pueda ser un aproximador universal, se obtienen aproximaciones mucho más inteligentes y ``económicas'' computacionalmente al contar con más de una capa oculta \cite{hornik1991approximation}, donde el máximo exponente de esta doctrina es precisamente el \textit{deep learning}.
 
 \section{Redes neuronales densas}
 \label{sec:redes_reuronales_densas}
@@ -74,7 +74,7 @@ Esto se puede apreciar en la Figura \ref{fig:nn_matrix_dense}\footnote{Imágenes
     \label{fig:nn_matrix_dense}
 \end{figure}
 
-Así, si el dato (vectorial por la naturaleza de estas redes) tiene 24 elementos, será necesaria una capa de entrada de 24 neuronas (24 columnas $x_{1} .. x_{24}$ según notación de la Figura \ref{fig:nn_matrix_dense}), y si queremos inferir sobre 1000 de estos datos, esto se puede hacer en una sola ejecución, siendo el número de columnas también de 1000.
+Así, si el dato (vectorial por la naturaleza de estas redes) tiene 24 elementos, será necesaria una capa de entrada de 24 neuronas (24 columnas $x_{1} .. x_{24}$ según notación de la Figura \ref{fig:nn_matrix_dense}). Si se quiere inferir sobre 1000 de estos datos, esto se puede hacer en una sola ejecución, siendo el número de filas de 1000 y dando como resultado una matriz de entrada de dimensiones 1000 $\times$ 24.
 
 O dicho de otra manera, sea la capa $M_{m}$ una capa completamente conexa con $m$ neuronas, a la cual se le introduce un dato $x_{m}$, donde el peso de la neurona $M_{i}$ hacia $N_{j}$ se denota como $w_{M,i,j}$, y la función de transferencia es $\phi$, entonces se tiene que la salida de una capa será:
 
@@ -87,7 +87,7 @@ A esta función se le puede añadir el \textit{bias} de forma explícita ($\sum\
 
 \section{Redes neuronales dispersas}
 \label{sec:redes_reuronales_dispersas}
-Las redes neuronales dispersas cuentan con una ventaja, y es el menor número de conexiones entre neuronas, o directamente el menor número de neuronas en la arquitectura. A pesar de esto, en realidad el fundamento matemático es el mismo, una simple multiplicación de matrices. Sin embargo, y aunque tengan el mismo funcionamiento base que su contraparte densa, se pueden explotar ciertas características, tanto de la estructura de las matrices dispersas como de su multiplicación, para obtener mejoras tanto en el tamaño del modelo como en su rendimiento, respectivamente.
+Las redes neuronales dispersas cuentan con una ventaja, y es el menor número de conexiones entre neuronas, o directamente el menor número de neuronas en la arquitectura. A pesar de esto, en realidad el fundamento matemático es el mismo, una simple multiplicación de matrices. Sin embargo, y aunque tengan el mismo funcionamiento base que su contrapartida densa, se pueden explotar ciertas características, tanto de la estructura de las matrices dispersas como de su multiplicación, para obtener mejoras tanto en el tamaño del modelo como en su rendimiento, respectivamente.
 
 \subsection{Fundamentos de matrices dispersas}
 \label{ssec:fundamentos_matrices_dispersas}
@@ -181,7 +181,7 @@ El problema de \texttt{BLAS\_susmm}, que calcula $C = \alpha AB + C$ en simple p
     \label{fig:nn_matrix_sparse}
 \end{figure}
 
-Sin embargo, empleando las propiedades de las matrices, es posible modificar el orden de las mismas, y así poder encajar cada matriz en la firma. Para esto se emplea una propiedad básica de las matrices, $C^{T} = (AB)^{T} = A^{T}B^{T}$. De esta forma, al transponer la matriz de pesos mediante el parámetro \texttt{transA}, y multiplicando esto por la salida de la capa anterior, se obtiene la salida $C^{T}$. Esto supone un pequeño \textit{overhead}, al tener que transponer la entrada a la capa de entrada, así como la salida de la capa de salida. Sin embargo, dicho \textit{overhead} puede mitigarse en gran medida, en función de la arquitectura de la red, así como de la fuente de datos, que es más que probable que mediante pequeñas modificaciones como filtrado o manejo de ficheros pueda exportar los datos transpuestos de base.
+Sin embargo, empleando las propiedades de las matrices, es posible modificar el orden de las mismas, y así poder encajar cada matriz en la firma. Para esto se emplea una propiedad básica de las matrices, $C^{T} = (AB)^{T} = B^{T}A^{T}$. De esta forma, al transponer la matriz de pesos mediante el parámetro \texttt{transA}, y multiplicando esto por la salida de la capa anterior, se obtiene la salida $C^{T}$. Esto supone un pequeño \textit{overhead}, al tener que transponer la entrada a la capa de entrada, así como la salida de la capa de salida. Sin embargo, dicho \textit{overhead} puede mitigarse en gran medida, en función de la arquitectura de la red, así como de la fuente de datos, que es más que probable que mediante pequeñas modificaciones como filtrado o manejo de ficheros pueda exportar los datos transpuestos de base.
 
 Esta estrategia se puede apreciar en la Figura \ref{fig:nn_matrix_sparse}, donde a diferencia de la Figura \ref{fig:nn_matrix_dense} se han transpuesto los pesos y las entradas, y han sido etiquetados correspondientemente mediante superíndices.
 
@@ -244,24 +244,24 @@ Por tanto, para una multiplicación de matrices similar a la tratada en esta sec
 
 \subsection{Obtención de la secuencia de operaciones}
 \label{ssec:obtencion_secuencia_operaciones}
-El procedimiento a seguir será multiplicar cada una de las filas de la matriz $w^{d}$ por cada fila de la matriz $x^{D}$, ambas mostradas en la subsección anterior. A cada iteración de la matriz $w^{d}$ se desplazará una posición a la derecha en la matriz $out^{D}$. Sin embargo, primero es conveniente almacenar los valores dispersos de la matriz $w^{d}$. Para esto, se puede construir una \acrshort{lut} (\textit{\acrlong{lut}}). En esta tabla se almacenan cada uno de los valores \textit{nonzero} de la matriz $w^{d}$ recorrida en orden secuencial estilo C. Para este ejemplo, el contenido de la \acrshort{lut} se muestra en la Tabla \ref{tab:lut_example}. En la columna izquierda puede verse la coordenada original del valor ubicado en la posición a su derecha.
+El procedimiento a seguir será multiplicar cada una de las filas de la matriz $w^{d}$ por cada fila de la matriz $x^{D}$, ambas mostradas en la subsección anterior. A cada iteración de la matriz $w^{d}$ se desplazará una posición a la derecha en la matriz $out^{D}$. Sin embargo, primero es conveniente almacenar los valores dispersos de la matriz $w^{d}$. Para esto, se puede construir una \acrshort{lut} (\textit{\acrlong{lut}}). En esta tabla se almacenan cada uno de los valores \textit{nonzero} de la matriz $w^{d}$ recorrida en orden secuencial estilo C. Para este ejemplo, el contenido de la \acrshort{lut} se muestra en la Tabla \ref{tab:lut_example}. En la columna izquierda pueden verse las coordenadas originales \textbf{(x,y)} del valor ubicado en la posición (\textbf{pos}) a su derecha. Además, se relacionan estas posiciones con los valores \textit{nonzero} visibles en la columna \textbf{val} (valor).
 
 \begin{table}[h!]
     \centering
-    \begin{tabular}{|c|c|}
+    \begin{tabular}{|c|c||c|}
     \hline
-    \textbf{(x$^{\sharp}$,y$^{\flat}$)} & \textbf{pos$^{\natural}$} \\\hline
-    (0,0) & 0 \\\hline
-    (0,1) & 1 \\\hline
-    (1,1) & 2 \\\hline
-    (3,0) & 3 \\\hline
-    (3,1) & 4 \\\hline
+    \textbf{(x,y)} & \textbf{pos} & \textbf{val} \\\hline
+    (0,0) & 0 & $w_{00}$\\\hline
+    (0,1) & 1 & $w_{01}$\\\hline
+    (1,1) & 2 & $w_{11}$\\\hline
+    (3,0) & 3 & $w_{30}$\\\hline
+    (3,1) & 4 & $w_{31}$\\\hline
     \end{tabular}
-    \caption{Contenido de la LUT para la matriz $w^{d}$. \textbf{x}, \textbf{y} y \textbf{pos} se etiquetan con $\sharp$, {\large$\flat$} y $\natural$}
+    \caption{Contenido de la LUT para la matriz $w^{d}$}
     \label{tab:lut_example}
 \end{table}
 
-A su vez, en la Tabla \ref{tab:w_matrix_memory_layout} se puede ver la disposición en memoria de cada valor \textit{nonzero} de la matriz dispersa de pesos que, debido a la omisión de los ceros en $w^{d}$ se almacenan forma contigua en memoria.
+En la Tabla \ref{tab:w_matrix_memory_layout} se puede ver de forma más sencilla la disposición en memoria de cada valor \textit{nonzero} de la matriz dispersa de pesos que, debido a la omisión de los ceros en $w^{d}$ se almacenan forma contigua en memoria. El offset en memoria desde la dirección base sería de \textbf{pos} $\times$ tamaño del tipo de datos. 
 
 \begin{table}[h!]
     \centering
@@ -274,18 +274,18 @@ A su vez, en la Tabla \ref{tab:w_matrix_memory_layout} se puede ver la disposici
     \label{tab:w_matrix_memory_layout}
 \end{table}
 
-Como el almacenamiento de matrices en C es por filas, se pueden tomar punteros al inicio de cada una de las filas en las matrices $x^{D}$ y $out^{D}$ y repetir esta secuencia $k$ veces. Es importante recordar que, aunque los accesos a la matriz $w^{d}$ sean aleatorios debido a su naturaleza dispersa, los valores de su versión compacta sí son accedidos secuencialmente. De esta forma, se recorre cada una de las entradas de la \acrshort{lut}, tomando cada índice etiquetado con $\sharp$, $\flat$ y $\natural$ en la Tabla \ref{tab:lut_example} tal como se indica a continuación:
+Como el almacenamiento de matrices en C es por filas, se pueden tomar punteros al inicio de cada una de las filas en las matrices $x^{D}$ y $out^{D}$ y repetir esta secuencia $k$ veces. Es importante recordar que, aunque los accesos a la matriz $w^{d}$ sean aleatorios debido a su naturaleza dispersa, los valores \textit{nonzero} almacenados en memoria sí son accedidos secuencialmente. De esta forma, se recorre cada una de las entradas de la \acrshort{lut}, tomando cada índice \textbf{x}, \textbf{pos} e \textbf{y} de la Tabla \ref{tab:lut_example} tal como se indica a continuación:
 
 \begin{center}
     $out = base\_out + m*num\_iteracion$\\
-    $D = base\_D + n*num\_iteracion$\\
+    $x = base\_x + n*num\_iteracion$\\
     \ \\
-    \ \ \ \ \ \  $\sharp$ \ \ \ \ \ \ \ \ \ \ \ \ \  $\natural$ \ \ \ \ \ \ \ \  {\large$\flat$} \ \\
-    $out[0] \pluseq w[0] \cdot D[0]$\\
-    $out[0] \pluseq w[1] \cdot D[1]$\\
-    $out[1] \pluseq w[2] \cdot D[1]$\\
-    $out[3] \pluseq w[3] \cdot D[0]$\\
-    $out[3] \pluseq w[4] \cdot D[1]$\\
+    \ \ \ \ \ \  \textbf{x} \ \ \ \ \ \ \ \ \ \  \textbf{pos} \ \ \ \ \  \textbf{y} \ \\
+    $out[0] \pluseq w[0] \cdot x[0]$\\
+    $out[0] \pluseq w[1] \cdot x[1]$\\
+    $out[1] \pluseq w[2] \cdot x[1]$\\
+    $out[3] \pluseq w[3] \cdot x[0]$\\
+    $out[3] \pluseq w[4] \cdot x[1]$\\
 \end{center}
 
 \section{TensorFlow}

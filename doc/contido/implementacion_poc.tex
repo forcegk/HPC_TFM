@@ -41,7 +41,7 @@ ds = tfds.load('german_credit_numeric', split='train', as_supervised=True)
 
     \item Se indica la función de pérdida, el optimizador y la métrica. Esto sería un tema muy interesante si este trabajo tratase de obtener buenos resultados con esta red; sin embargo en este caso es irrelevante que la arquitectura de la red sea buena o no, así como la calidad de su entrenamiento y resultados.
 
-    \item Se crea un modelo secuencial, es decir, un modelo ``capa por capa'', en el que cada capa va a continuación de la siguiente. Tras crearlo se \textit{buildea} (\texttt{model.build()}) y se compila:\medskip
+    \item Se crea un modelo secuencial, es decir, un modelo ``capa por capa'', en el que cada capa va a continuación de la siguiente. Tras crearlo se ``construye'' (\texttt{model.build()}) y se compila:\medskip
 \begin{lstlisting}[language=Python]
 model = tf.keras.models.Sequential(name= "MySampleModel")
 model.add(tf.keras.layers.InputLayer((tamano_entrada,)))
@@ -54,7 +54,7 @@ model.build()
 model.compile(loss=fn_perdida, optimizer=optimizador, metrics=metrica)
 \end{lstlisting}
 
-    \item Tras la creación del modelo hay que entrenarlo. Este complejo proceso a nivel de implementación, basado en el algoritmo de \textit{backpropagation}, y con todos los detalles que este implica, se puede realizar en, al más puro estilo Python, con un \textit{one-liner}:\medskip
+    \item Tras la creación del modelo hay que entrenarlo. Este complejo proceso a nivel de implementación, basado en el algoritmo de \textit{backpropagation}, y con todos los detalles que este implica, se puede realizar, al más puro estilo Python, con un \textit{one-liner}:\medskip
 \begin{lstlisting}[language=Python]
 history =  model.fit(x=lote_entrenamiento[0], y = lote_entrenamiento[1], batch_size = 20, epochs=num_epochs)
 \end{lstlisting}
@@ -244,7 +244,7 @@ En esta sección se describe cómo se importan los datos extraídos de los model
 
 \subsection{Importación de matrices densas}
 \label{ssec:importacion_matrices_densas}
-El lenguaje de programación C almacena las matrices por filas. Aprovechando esta característica, y haciendo uso del tan granular acceso a bajo nivel que nos permite hacer este lenguaje, se importan las matrices de pesos y \textit{bias} desde la sección \texttt{.text}, debido a que son cadenas de solo lectura. Esto implica que, una vez que el programa se carga en memoria, este no lee ningún archivo salvo la entrada de datos.
+El lenguaje de programación C almacena las matrices por filas. Aprovechando esta característica y el acceso a bajo nivel que nos brinda este lenguaje, se importan las matrices de pesos y \textit{bias} desde la sección \texttt{.text}, debido a que son cadenas de solo lectura. Esto implica que, una vez que el programa se carga en memoria, este no lee ningún archivo salvo la entrada de datos.
 
 Mediante funciones de manejo de \textit{strings} en Python para la generación de estas líneas de código, y recordando que la arquitectura x86(\_64) es \textit{little endian}\footnote{\url{https://es.wikipedia.org/wiki/Endianness}}, los datos de cada una de las capas se importan al código con las siguientes líneas:\medskip
 \begin{lstlisting}[language=C]
@@ -265,7 +265,7 @@ const fp32 * layer3_weights = (fp32 *)
 const fp32 * layer3_bias = (fp32 *) "\xc8\x2d\x40\x3d";
 \end{lstlisting}
 
-Estos valores, al ser \textit{casteados} a un vector de \texttt{fp32}, pueden ser accedidos más adelante con el \textit{stride} de dicho tipo de dato (en este caso, 32 bits).
+Estos valores, al ser convertidos a un vector de \texttt{fp32}, pueden ser accedidos más adelante con el \textit{stride} de dicho tipo de dato (en este caso, 32 bits).
 
 \subsection{Importación de matrices dispersas}
 \label{ssec:importacion_matrices_dispersas}
@@ -433,7 +433,7 @@ fprintf(stderr, "*** Transposing input out-of-place ***\n");
 cblas_somatcopy(CblasRowMajor, CblasTrans, input_dim, LAYER0_SIZE, 1.f, (float *) input, LAYER0_SIZE, (float *) temp_input, input_dim);
 \end{lstlisting}
 
-    Este procedimiento, que se realiza \textit{out-of-place} por la mejora de rendimiento que supone al transponer matrices no cuadradas, se complementa con lógica básica de punteros previa y posterior a la llamada a función, en la que no es necesario profundizar, pero que hace que esta transposición sea transparente al resto del código. A continuación se muestra como ejemplo el bloque que realiza la transposición de la capa de salida de forma transparente al resto del programa, para una red neuronal de tres capas:\medskip
+    Este procedimiento, que se realiza \textit{out-of-place}\footnote{Instrucción \texttt{?omatcopy}, que transpone un \textit{buffer} sobre otro. Extensiones de \texttt{OpenBLAS} en \url{https://github.com/xianyi/OpenBLAS/wiki/OpenBLAS-Extensions}} por la mejora de rendimiento que supone al transponer matrices no cuadradas, se complementa con lógica básica de punteros previa y posterior a la llamada a función, en la que no es necesario profundizar, pero que hace que esta transposición sea transparente al resto del código. A continuación se muestra como ejemplo el bloque que realiza la transposición de la capa de salida de forma transparente al resto del programa, para una red neuronal de tres capas:\medskip
 \begin{lstlisting}[language=C]
 #if LAYER3_SIZE != 1
 fp32 * temp_output = malloc(input_dim * LAYER3_SIZE * sizeof(fp32));
@@ -445,7 +445,7 @@ temp_output = NULL;
 #endif
 \end{lstlisting}
 
-    \item En cuanto a ``ajustar los parámetros de las funciones densas'', este es un paso intermedio que no se aprecia en la versión final. En este paso se comprueba que el resultado no varía al adaptar el código a las funciones Sparse \acrshort{blas} de \texttt{librsb}. Fuera de los cambios en los parámetros, también se hace necesario un cambio en la función \texttt{map\_and\_bias}, que ahora debe aplicar los \textit{bias} en un \textit{layout} de memoria diferente. Para esto se añade un parámetro \texttt{transA}. Este parámetro no transpone la matriz, como sí que ocurre en \acrshort{blas}, sino que indica a \texttt{map\_and\_bias} que la matriz sobre la que aplica los \textit{bias} y la función de transferencia está transpuesta en memoria, por lo que el \textit{traversing} debe ser diferente. La modificación de dicha función se muestra, simplificada, en el siguiente código:\medskip
+    \item En cuanto a ``ajustar los parámetros de las funciones densas'', este es un paso intermedio que no se aprecia en la versión final. En este paso se comprueba que el resultado no varía al adaptar el código a las funciones Sparse \acrshort{blas} de \texttt{librsb}. Fuera de los cambios en los parámetros, también se hace necesario un cambio en la función \texttt{map\_and\_bias}, que ahora debe aplicar los \textit{bias} en un \textit{layout} de memoria diferente. Para esto se añade un parámetro \texttt{transA}. Este parámetro no transpone la matriz, como sí que ocurre en \acrshort{blas}, sino que indica a \texttt{map\_and\_bias} que la matriz sobre la que aplica los \textit{bias} y la función de transferencia está transpuesta en memoria, por lo que el orden de acceso (\textit{traversing}) debe ser diferente. La modificación de dicha función se muestra, simplificada, en el siguiente código:\medskip
 \begin{lstlisting}[language=C]
 void map_and_bias__fp32(fp32 *restrict A, const fp32 *restrict bias, const uint32_t M, const uint32_t N, const char transA, fp32 (* map_function)(fp32 x)){
     switch (transA){
@@ -495,7 +495,7 @@ map_and_bias__fp32(layer3_out, layer3_bias, LAYER3_SIZE, input_dim,
 
 \subsection{Arquitectura \textit{point-to-point}}
 \label{ssec:gdin_arquitectura_point_to_point}
-Ahora que se ha visto cómo implementar una arquitectura basada en matrices densas, así como su adaptación a matrices dispersas, se procede a explicar cómo se ha implementado la arquitectura \textit{point-to-point}. Para ello, se ha empleado la misma estructura de código que la arquitectura basada en matrices densas, pero empleando secuencias \texttt{\acrshort{fma}} y lógica de punteros, tal como se comenta en la Sección \ref{sec:multiplicacion_point_to_point}. Para realizar esto, los pasos a seguir basándose en la implementación con matrices densas son los siguientes:
+Ahora que se ha visto cómo implementar una arquitectura basada en \texttt{OpenBLAS} para operar sobre matrices densas, así como su adaptación a \texttt{librsb} para operar con matrices dispersas, se explica cómo se ha implementado la arquitectura \textit{point-to-point} para su uso con matrices dispersas. Para ello, se ha empleado la misma estructura de código que anteriormente, pero empleando secuencias \texttt{\acrshort{fma}} y lógica de punteros, tal como se comenta en la Sección \ref{sec:multiplicacion_point_to_point}. Para realizar esto, los pasos a seguir basándose en las implementaciones anteriores son los siguientes:
 
 \begin{enumerate}
     \item Implementar la generación de código \textit{point-to-point}.
